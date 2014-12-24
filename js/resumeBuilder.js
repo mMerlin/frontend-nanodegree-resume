@@ -9,5 +9,5 @@ me.role = 'Web Developer';
 var formattedName = HTMLheaderName.replace(placeholderText, me.name);
 var formattedRole = HTMLheaderRole.replace(placeholderText, me.role);
 
+$('#header').prepend(formattedRole);
 $('#header').prepend(formattedName);
-$('#header').append(formattedRole);
