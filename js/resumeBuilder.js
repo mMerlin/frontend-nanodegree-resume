@@ -1,2 +1,4 @@
-var awesomeThoughts = "I am Phil and I am AWESOME!";
-console.log(awesomeThoughts);
+var email = "cameron@udacity.com";
+var newEmail = email.replace("udacity", "gmail");
+console.log(email);
+console.log(newEmail);
