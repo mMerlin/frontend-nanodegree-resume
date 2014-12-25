@@ -1,13 +1,12 @@
-var placeholderText = '%data%'; //common search string
-var me = {};//empty object; reduce namespace pollution
-me.name = 'H. Phil Duby';
-me.role = 'Web Developer';
-//resumeHTML = {};
-//ResumeHTML.headerName = '{stuff}%data%{stuff}';
-//var formatedResume = {};
-//formatedResume.Name = ResumeHTML.header.name.replace(placeholderText, me.name);
-var formattedName = HTMLheaderName.replace(placeholderText, me.name);
-var formattedRole = HTMLheaderRole.replace(placeholderText, me.role);
+var s = "audacity";
 
-$('#header').prepend(formattedRole);
-$('#header').prepend(formattedName);
+var udacityizer = function(s) {
+    // Right now, the variable s === "audacity"
+    // Manipulate s to make it equal to "Udacity"
+    s = s.slice(1,2).toLocaleUpperCase().concat(s.slice(2));
+
+    return s;
+};
+
+// Did your code work? The line below will tell you!
+console.log(udacityizer(s));
