@@ -1,4 +1,5 @@
 /*jslint browser: true */
+/*global $ */
 var appData = {};
 
 ////////////////////////////////
@@ -6,8 +7,7 @@ var appData = {};
 ////////////////////////////////
 
 /**
- * Add a new work history object to the array, and fill it in with the supplied
- *  details.
+ * Fill in a new work history object, and add it to the array.
  * @param  {string}
  * @param  {string}
  * @param  {string}
@@ -18,17 +18,16 @@ var appData = {};
 appData.loadWorkHistory = function (histEmployer, histTitle, histLocation,
     histDates, histDescription) {
     "use strict";
-    appData.work.push({});//Add employment history object to exisiting array
-    appData.idx = appData.work.length - 1;//Array index for just added object
-    appData.wrk = appData.work[appData.idx];//The brand new empty object
-
-    appData.wrk.employer = histEmployer;
-    appData.wrk.title = histTitle;
-    appData.wrk.location = histLocation;
-    appData.wrk.dates = histDates;
+    var wrk_entry = {};
+    wrk_entry.employer = histEmployer;
+    wrk_entry.title = histTitle;
+    wrk_entry.location = histLocation;
+    wrk_entry.dates = histDates;
     if (histDescription !== 'undefined') {
-        appData.wrk.description = histDescription;
+        wrk_entry.description = histDescription;
     }
+    appData.work.push(wrk_entry);//Add one employment history to exisiting array
+
 };
 /*
 appData.work.push({});
@@ -42,8 +41,7 @@ appData.wrk.description = 'Repair and rebuild of contract management web applica
 */
 
 /**
- * Add a new work history object to the array, and fill it in with the supplied
- *  details.
+ * Fill in a new school history object, and add it to the array.
  * @param  {string}
  * @param  {string}
  * @param  {string}
@@ -54,20 +52,18 @@ appData.wrk.description = 'Repair and rebuild of contract management web applica
 appData.loadSchoolHistory = function (histSchool, histLocation, histDates,
     histDegree, histMajor) {
     "use strict";
-    appData.schools.push({});//Add school history object to exisiting array
-    appData.idx = appData.schools.length - 1;//Last, just added array entry
-    appData.wrk = appData.schools[appData.idx];//The brand new empty object
-
+    var sch_entry = {};
     //JSLint will complain about bracket notation, but the lesson asks for it
-    appData.wrk['institute'] = histSchool;
-    appData.wrk['location'] = histLocation;
-    appData.wrk['dates'] = histDates;
+    sch_entry['institute'] = histSchool;
+    sch_entry['location'] = histLocation;
+    sch_entry['dates'] = histDates;
     if (histDegree !== 'undefined') {
-        appData.wrk['degree'] = histDegree;
+        sch_entry['degree'] = histDegree;
     }
     if (histMajor !== 'undefined') {
-        appData.wrk['major'] = histMajor;
+        sch_entry['major'] = histMajor;
     }
+    appData.schools.push(sch_entry);//Add school history object to exisiting array
 };
 /*
 appData.schools.push({});//Add school history object to exisiting array
@@ -165,8 +161,10 @@ appData.populatePage = function () {
         HTMLcontactGeneric, HTMLWelcomeMsg, HTMLskillsStart, HTMLbioPic,
         HTMLworkStart, HTMLworkEmployer, HTMLworkTitle, HTMLschoolStart,
         HTMLschoolName */
-    var bio = appData.bio;
+    var bio;
+    bio = appData.bio;
 
+    // TODO: Idea: streamline this by moving sections to their own functions.
     $('#header').prepend(HTMLheaderRole.replace(appData.placeholderText,
         bio.role
         ));
