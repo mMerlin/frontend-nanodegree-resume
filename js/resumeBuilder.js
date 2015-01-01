@@ -18,27 +18,20 @@ var appData = {};
 appData.loadWorkHistory = function (histEmployer, histTitle, histLocation,
     histDates, histDescription) {
     "use strict";
-    var wrk_entry = {};
-    wrk_entry.employer = histEmployer;
-    wrk_entry.title = histTitle;
-    wrk_entry.location = histLocation;
-    wrk_entry.dates = histDates;
+    var wrkEntry = {};
+    wrkEntry.employer = histEmployer;
+    wrkEntry.title = histTitle;
+    wrkEntry.location = histLocation;
+    wrkEntry.dates = histDates;
     if (histDescription !== 'undefined') {
-        wrk_entry.description = histDescription;
+        wrkEntry.description = histDescription;
     }
-    appData.work.push(wrk_entry);//Add one employment history to exisiting array
-
+    /*
+    .dates ==> .years //run length versus start and end
+    .title ==> .position //is position a standard js/DOM attribute?
+     */
+    appData.work.push(wrkEntry);//Add one employment history to exisiting array
 };
-/*
-appData.work.push({});
-appData.idx = appData.work.length - 1;
-appData.wrk = appData.work[appData.idx];
-appData.wrk.employer = 'GDM';
-appData.wrk.title = 'Contract Programmer Analyst';
-appData.wrk.location = 'Calgary';
-appData.wrk.dates = '2011 - 2012';
-appData.wrk.description = 'Repair and rebuild of contract management web application';
-*/
 
 /**
  * Fill in a new school history object, and add it to the array.
@@ -52,29 +45,24 @@ appData.wrk.description = 'Repair and rebuild of contract management web applica
 appData.loadSchoolHistory = function (histSchool, histLocation, histDates,
     histDegree, histMajor) {
     "use strict";
-    var sch_entry = {};
+    var schEntry = {};
     //JSLint will complain about bracket notation, but the lesson asks for it
-    sch_entry['institute'] = histSchool;
-    sch_entry['location'] = histLocation;
-    sch_entry['dates'] = histDates;
+    schEntry['institute'] = histSchool;
+    schEntry['location'] = histLocation;
+    schEntry['dates'] = histDates;
     if (histDegree !== 'undefined') {
-        sch_entry['degree'] = histDegree;
+        schEntry['degree'] = histDegree;
     }
     if (histMajor !== 'undefined') {
-        sch_entry['major'] = histMajor;
+        schEntry['major'] = histMajor;
     }
-    appData.schools.push(sch_entry);//Add school history object to exisiting array
+    /*
+    .institute ==> .name
+    .location ==> .city
+    .dates ==> .years
+     */
+    appData.schools.push(schEntry);//Add school history object to exisiting array
 };
-/*
-appData.schools.push({});//Add school history object to exisiting array
-appData.idx = appData.schools.length - 1;//Last, just added array entry
-appData.wrk = appData.schools[appData.idx];//The brand new empty object
-appData.schools[appData.idx]['institute'] = 'SAIT';
-appData.wrk['location'] = 'Calgary';
-appData.wrk['dates'] = '1976 - 1980';
-appData.wrk['degree'] = 'Computer Science';
-appData.wrk['major'] = 'selected courses';
-*/
 
 /**
  * Add a single skill entry to the page
@@ -96,25 +84,25 @@ appData.addExperience = function (workInstance) {
     "use strict";
     /*global HTMLworkStart, HTMLworkEmployer, HTMLworkTitle, HTMLworkDates,
         HTMLworkLocation, HTMLworkDescription */
-    var wrk_entry;
+    var wrkEntry;
     $('#workExperience').append(HTMLworkStart);
     //appData.addWork($('#workExperience').last(), appData.work[0]);
 //JSLint will complain about bracket notation here, but the lesson asks for it
-    wrk_entry = $('.work-entry').last(); //Just added above
-    wrk_entry.append(HTMLworkEmployer.replace(appData.placeholderText,
+    wrkEntry = $('.work-entry').last(); //Just added above
+    wrkEntry.append(HTMLworkEmployer.replace(appData.placeholderText,
         workInstance['employer']
         ));
-    wrk_entry.append(HTMLworkLocation.replace(appData.placeholderText,
+    wrkEntry.append(HTMLworkLocation.replace(appData.placeholderText,
         workInstance['location']
         ));
-    wrk_entry.append(HTMLworkDates.replace(appData.placeholderText,
+    wrkEntry.append(HTMLworkDates.replace(appData.placeholderText,
         workInstance['dates']
         ));
-    wrk_entry.append(HTMLworkTitle.replace(appData.placeholderText,
+    wrkEntry.append(HTMLworkTitle.replace(appData.placeholderText,
         workInstance['title']
         ));
     if (workInstance['description']) {
-        wrk_entry.append(HTMLworkDescription.replace(appData.placeholderText,
+        wrkEntry.append(HTMLworkDescription.replace(appData.placeholderText,
             workInstance['description']
             ));
     }
@@ -128,24 +116,24 @@ appData.addSchool = function (schoolInstance) {
     "use strict";
     /*global HTMLschoolStart, HTMLschoolName, HTMLschoolDegree,
         HTMLschoolDates, HTMLschoolLocation, HTMLschoolMajor */
-    var edu_entry;
+    var eduEntry;
     $('#education').append(HTMLschoolStart);
-    edu_entry = $('.education-entry').last(); //Just added above
-    edu_entry.append(HTMLschoolName.replace(appData.placeholderText,
+    eduEntry = $('.education-entry').last(); //Just added above
+    eduEntry.append(HTMLschoolName.replace(appData.placeholderText,
         schoolInstance.institute
         ));
-    edu_entry.append(HTMLschoolLocation.replace(appData.placeholderText,
+    eduEntry.append(HTMLschoolLocation.replace(appData.placeholderText,
         schoolInstance.location
         ));
-    edu_entry.append(HTMLschoolDates.replace(appData.placeholderText,
+    eduEntry.append(HTMLschoolDates.replace(appData.placeholderText,
         schoolInstance.dates
         ));
     if (schoolInstance.degree) {
-        edu_entry.append(HTMLschoolName.replace(appData.placeholderText,
+        eduEntry.append(HTMLschoolName.replace(appData.placeholderText,
             schoolInstance.degree
             ));
         if (schoolInstance.major) {
-            edu_entry.append(HTMLschoolMajor.replace(appData.placeholderText,
+            eduEntry.append(HTMLschoolMajor.replace(appData.placeholderText,
                 schoolInstance.major
                 ));
         }
@@ -172,7 +160,7 @@ appData.populatePage = function () {
         bio.name
         ));
     $('#header').prepend(HTMLbioPic.replace(appData.placeholderText,
-        bio.pic_url
+        bio.picUrl
         ));
     $('#topContacts').append(HTMLemail.replace(appData.placeholderText,
         bio.contact.email
@@ -194,7 +182,7 @@ appData.populatePage = function () {
         ));
 
     $('#header').append(HTMLWelcomeMsg.replace(appData.placeholderText,
-        bio.welcome_message
+        bio.welcomeMessage
         ));
     $('#header').append(HTMLskillsStart);
     bio.skills.forEach(appData.addSkill);//Show details for each skill
@@ -218,20 +206,20 @@ appData.bio = {
         },
         'email' : 'philduby@phriendly.net',
         'github' : 'https://github.com/mMerlin',
-        'location' : 'Calgary',
+        'location' : 'Calgary, AB, Canada',
         'postal' : {
             'Country' : 'Canada',
             'city' : 'Calgary',
-            'state_prov' : 'AB',
-            'zip_pc' : 'T3B 4N3',
-            'street_1' : '27 Silversprings Drive NW',
-            'street_2' : 'Unit 66'
+            'stateProv' : 'AB',
+            'zipPostal' : 'T3B 4N3',
+            'street1' : '27 Silversprings Drive NW',
+            'street2' : 'Unit 66'
         }
     },
     'avatar' : '',
-    'welcome_message' : 'Thank-you for visiting my web page.',
+    'welcomeMessage' : 'Thank-you for visiting my web page.',
     'skills' : ['programming', 'analysis', 'desktop support'],
-    'pic_url' : 'images/biopic.jpg'
+    'picUrl' : 'images/biopic.jpg'
 };
 
 ////////////////////////////
@@ -248,68 +236,68 @@ appData.loadWorkHistory('employer',
 */
 appData.loadWorkHistory('GDM',
     'Contract Programmer Analyst',
-    'Calgary',
+    'Calgary, AB, Canada',
     '2011 - 2012',
     'Repair and rebuild of contract management web application'
     );
 appData.loadWorkHistory('The Lambda Geek',
     'Owner / Operator',
-    'Calgary',
+    'Calgary, AB, Canada',
     '2009 - 2009',
     'Computer sales and support'
     );
 appData.loadWorkHistory('Shaw Cablesystems',
     'Senior Software Developer',
-    'Calgary',
+    'Calgary, AB, Canada',
     '2002 - 2008',
     'Web site application support, Data conversion and green screen '
         + 'application support'
     );
 appData.loadWorkHistory('Donortrust',
     'Volunteer Programmer',
-    'Calgary',
+    'Calgary, AB, Canada',
     '2006 - 2007',
     'Work with the group doing design and development of the Donortrust ' +
         'applications to support the Christmas Future web site'
     );
 appData.loadWorkHistory('Nortel Networks',
     'Contract Programmer Analyst',
-    'Calgary',
+    'Calgary, AB, Canada',
     '1997 - 2001'
     );
 appData.loadWorkHistory('TransAlta Utilities',
     'Contract Programmer Analyst',
-    'Calgary',
+    'Calgary, AB, Canada',
     '1994 - 1997'
     );
 appData.loadWorkHistory('Rhyason Consultants',
     'Contract Programmer',
-    'Calgary',
+    'Calgary, AB, Canada',
     '1993 - 1994'
     );
 appData.loadWorkHistory('Hydro Mississauga',
     'Contract Programmer Analyst',
-    'Mississauga',
+    'Mississauga, ON, Canada',
     '1992 - 1993'
     );
 appData.loadWorkHistory('MONENCO Information Systems Inc',
     'System Analyst',
-    'Calgary',
+    'Calgary, AB, Canada',
     '1983 - 1992'
     );
 appData.loadWorkHistory('Western Canada Summer Games 1983',
     'Contract Programmer',
-    'Calgary',
+    'Calgary, AB, Canada',
     '1983 - 1983'
     );
 appData.loadWorkHistory('Western Cooperative Fertilizers, Ltd',
     'Computer Programmer',
-    'Calgary',
+    'Calgary, AB, Canada',
     '1980 - 1983'
     );
 appData.loadWorkHistory('CIBC',
     'MICR Sorter Operator',
-    'Calgary',
+    'Calgary, AB, Canada',
     '1975 - 1980'
     );
 
@@ -326,24 +314,23 @@ appData.loadSchoolHistory('school',
     );
 */
 appData.loadSchoolHistory('SAIT',
-    'Calgary',
+    'Calgary, AB, Canada',
     '1976 - 1980',
     'Computer Science',
     'selected courses'
     );
 appData.loadSchoolHistory('U of C',
-    'Calgary',
+    'Calgary, AB, Canada',
     '1976 - 1982',
     'Computer Science',
     'selected courses'
     );
 appData.loadSchoolHistory('SAIT',
-    'Calgary',
+    'Calgary, AB, Canada',
     '1981 - 1983',
     'Computer Science',
     'Technical Programming Certificate'
     );
-
 
 //ONLINE
 // TODO: alternative to 'class', which is a js keyword
