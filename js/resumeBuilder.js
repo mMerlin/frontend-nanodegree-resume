@@ -332,6 +332,44 @@ appData.loadSchoolHistory('SAIT',
     'Technical Programming Certificate'
     );
 
+/**
+ * Schools with cities, majors, minors, graduation years and online course
+ * information
+ *
+ * The Front-End Developer nanodegree course style guide
+ * http://udacity.github.io/frontend-nanodegree-styleguide/javascript.html
+ * says to use single quotes for JavaScript strings, but double quotes are required
+ * for json.
+ *
+ * UDACITY > Javascript Basic > Lesson 1 - Data Types >
+ *   Validating JSON Quiz
+ * @type {Object}
+ */
+appData.Education = [
+    {
+        "institute": "SAIT",
+        "location": "Calgary, AB, Canada",
+        "graduation": "1980",
+        "degree": "Computer Science",
+        "major": "selected courses"
+    },
+    {
+        "institute": "U of C",
+        "location": "Calgary, AB, Canada",
+        "graduation": "1982",
+        "degree": "Computer Science",
+        "major": "selected courses"
+    },
+    {
+        "institute": "SAIT",
+        "location": "Calgary, AB, Canada",
+        "graduation": "1983",
+        "degree": "Computer Science",
+        "major": "Technical Programming Certificate"
+    }
+];
+//appData.Education = {"schools": []}
+
 //ONLINE
 // TODO: alternative to 'class', which is a js keyword
 //appData.wrk['class'] = 'Adobe Flash CS5';
