@@ -345,29 +345,48 @@ appData.loadSchoolHistory('SAIT',
  *   Validating JSON Quiz
  * @type {Object}
  */
-appData.Education = [
-    {
-        "institute": "SAIT",
-        "location": "Calgary, AB, Canada",
-        "graduation": "1980",
-        "degree": "Computer Science",
-        "major": "selected courses"
-    },
-    {
-        "institute": "U of C",
-        "location": "Calgary, AB, Canada",
-        "graduation": "1982",
-        "degree": "Computer Science",
-        "major": "selected courses"
-    },
-    {
-        "institute": "SAIT",
-        "location": "Calgary, AB, Canada",
-        "graduation": "1983",
-        "degree": "Computer Science",
-        "major": "Technical Programming Certificate"
-    }
-];
+appData.Education = {
+    "schools": [
+        {
+            "institute": "SAIT",
+            "location": "Calgary, AB, Canada",
+            "graduation": 1980,
+            "degree": "none",
+            "majors": ["selected CS courses"],
+            "url": "http://www.sait.ca/"
+        },
+        {
+            "institute": "U of C",
+            "location": "Calgary, AB, Canada",
+            "graduation": 1982,
+            "degree": "none",
+            "majors": ["selected CS courses"],
+            "url": "http://ucalgary.ca/"
+        },
+        {
+            "institute": "SAIT",
+            "location": "Calgary, AB, Canada",
+            "graduation": 1983,
+            "degree": "none",
+            "majors": ["Technical Programming Certificate"],
+            "url": "http://www.sait.ca/"
+        }
+    ],
+    "onlineCourses": [
+        {
+            "institute": "Udacity",
+            "title": "Introduction to Computer Science",
+            "completion": 2012,
+            "url": "https://www.udacity.com/course/cs101"
+        },
+        {
+            "institute": "Udacity",
+            "title": "Artificial Intelligence for Robotics",
+            "completion": 2012,
+            "url": "https://www.udacity.com/course/cs373"
+        }
+    ]
+};
 //appData.Education = {"schools": []}
 
 //ONLINE
