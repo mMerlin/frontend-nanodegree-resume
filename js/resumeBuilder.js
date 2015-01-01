@@ -1,144 +1,9 @@
 /*jslint browser: true */
 /*global $ */
 var appData = {};
-
-////////////////////////////////
-// Local Function Definitions //
-////////////////////////////////
-
-/**
- * Add a single skill entry to the page
- * @param {string}
- */
-appData.addSkill = function (singleSkill) {
-    "use strict";
-    /*global HTMLskills */
-    $('#skills').append(HTMLskills.replace(appData.placeholderText,
-        singleSkill
-        ));
-};
-
-/**
- * Add all details for a single work experience to the page
- * @param {[object]}
- */
-appData.addExperience = function (workInstance) {
-    "use strict";
-    /*global HTMLworkStart, HTMLworkEmployer, HTMLworkTitle, HTMLworkDates,
-        HTMLworkLocation, HTMLworkDescription */
-    var wrkEntry;
-    $('#workExperience').append(HTMLworkStart);
-    //appData.addWork($('#workExperience').last(), appData.work[0]);
-//JSLint will complain about bracket notation here, but the lesson asks for it
-    wrkEntry = $('.work-entry').last(); //Just added above
-    wrkEntry.append(HTMLworkEmployer.replace(appData.placeholderText,
-        workInstance['employer']
-        ));
-    wrkEntry.append(HTMLworkLocation.replace(appData.placeholderText,
-        workInstance['location']
-        ));
-    wrkEntry.append(HTMLworkDates.replace(appData.placeholderText,
-        workInstance['dates']
-        ));
-    wrkEntry.append(HTMLworkTitle.replace(appData.placeholderText,
-        workInstance['title']
-        ));
-    if (workInstance['description']) {
-        wrkEntry.append(HTMLworkDescription.replace(appData.placeholderText,
-            workInstance['description']
-            ));
-    }
-};
-
-/**
- * Add all details for a single school to the page education information
- * @param {object}
- */
-appData.addSchool = function (schoolInstance) {
-    "use strict";
-    /*global HTMLschoolStart, HTMLschoolName, HTMLschoolDegree,
-        HTMLschoolDates, HTMLschoolLocation, HTMLschoolMajor */
-    var eduEntry;
-    $('#education').append(HTMLschoolStart);
-    eduEntry = $('.education-entry').last(); //Just added above
-    eduEntry.append(HTMLschoolName.replace(appData.placeholderText,
-        schoolInstance.name
-        ));
-    eduEntry.append(HTMLschoolLocation.replace(appData.placeholderText,
-        schoolInstance.location
-        ));
-    eduEntry.append(HTMLschoolDates.replace(appData.placeholderText,
-        schoolInstance.dates
-        ));
-    if (schoolInstance.degree) {
-        eduEntry.append(HTMLschoolName.replace(appData.placeholderText,
-            schoolInstance.degree
-            ));
-        if (schoolInstance.major) {
-            eduEntry.append(HTMLschoolMajor.replace(appData.placeholderText,
-                schoolInstance.major
-                ));
-        }
-    }
-};
-
-/**
- * Merge the resume data into the web page
- */
-appData.populatePage = function () {
-    "use strict";
-    /*global $, HTMLheaderName, HTMLheaderRole, HTMLemail, HTMLmobile,
-        HTMLcontactGeneric, HTMLWelcomeMsg, HTMLskillsStart, HTMLbioPic,
-        HTMLworkStart, HTMLworkEmployer, HTMLworkTitle, HTMLschoolStart,
-        HTMLschoolName */
-    var bio, work, education, projects;
-    bio = appData.bio;
-    work = appData.work;
-    education = appData.education;
-    projects = appData.projects;
-
-    // TODO: Idea: streamline this by moving sections to their own functions.
-    $('#header').prepend(HTMLheaderRole.replace(appData.placeholderText,
-        bio.role
-        ));
-    $('#header').prepend(HTMLheaderName.replace(appData.placeholderText,
-        bio.name
-        ));
-    $('#header').prepend(HTMLbioPic.replace(appData.placeholderText,
-        bio.picUrl
-        ));
-    $('#topContacts').append(HTMLemail.replace(appData.placeholderText,
-        bio.contact.email
-        ));
-    $('#topContacts').append(HTMLmobile.replace(appData.placeholderText,
-        bio.contact.mobile
-        ));
-    $('#topContacts').append(HTMLcontactGeneric.replace(appData.placeholderText,
-        bio.contact.github).replace('%contact%', 'GitHub'
-        ));
-    $('#footerContacts').append(HTMLemail.replace(appData.placeholderText,
-        bio.contact.email
-        ));
-    $('#footerContacts').append(HTMLmobile.replace(appData.placeholderText,
-        bio.contact.mobile
-        ));
-    $('#footerContacts').append(HTMLcontactGeneric.replace(appData.placeholderText,
-        bio.contact.github).replace('%contact%', 'GitHub'
-        ));
-
-    $('#header').append(HTMLWelcomeMsg.replace(appData.placeholderText,
-        bio.welcomeMessage
-        ));
-    $('#header').append(HTMLskillsStart);
-    bio.skills.forEach(appData.addSkill);//Show details for each skill
-    work.jobs.forEach(appData.addExperience);//Show details for each work event
-    education.schools.forEach(appData.addSchool);//Show details for each school
-    //education.onlineCourses.forEach();
-    //projects.forEach();
-};
-
-
 appData.placeholderText = '%data%'; //common replacement string
+
+
 //////////////////////////////////////////
 // Load the raw bio data for the resume //
 //////////////////////////////////////////
@@ -358,7 +223,7 @@ appData.Education = {
     ]
 };
 
-appData.populatePage();
+//appData.populatePage();
 
 //appData.resumeHTML = {};
 //ResumeHTML.headerName = '{stuff}%data%{stuff}';
