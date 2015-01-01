@@ -7,64 +7,6 @@ var appData = {};
 ////////////////////////////////
 
 /**
- * Fill in a new work history object, and add it to the array.
- * @param  {string}
- * @param  {string}
- * @param  {string}
- * @param  {string}
- * @param  {string}
- * @param  {string}
- */
-appData.loadWorkHistory = function (histEmployer, histTitle, histLocation,
-    histDates, histDescription) {
-    "use strict";
-    var wrkEntry = {};
-    wrkEntry.employer = histEmployer;
-    wrkEntry.title = histTitle;
-    wrkEntry.location = histLocation;
-    wrkEntry.dates = histDates;
-    if (histDescription !== 'undefined') {
-        wrkEntry.description = histDescription;
-    }
-    /*
-    .dates ==> .years //run length versus start and end
-    .title ==> .position //is position a standard js/DOM attribute?
-     */
-    appData.work.push(wrkEntry);//Add one employment history to exisiting array
-};
-
-/**
- * Fill in a new school history object, and add it to the array.
- * @param  {string}
- * @param  {string}
- * @param  {string}
- * @param  {string}
- * @param  {string}
- * @return {[type]}
- */
-appData.loadSchoolHistory = function (histSchool, histLocation, histDates,
-    histDegree, histMajor) {
-    "use strict";
-    var schEntry = {};
-    //JSLint will complain about bracket notation, but the lesson asks for it
-    schEntry['institute'] = histSchool;
-    schEntry['location'] = histLocation;
-    schEntry['dates'] = histDates;
-    if (histDegree !== 'undefined') {
-        schEntry['degree'] = histDegree;
-    }
-    if (histMajor !== 'undefined') {
-        schEntry['major'] = histMajor;
-    }
-    /*
-    .institute ==> .name
-    .location ==> .city
-    .dates ==> .years
-     */
-    appData.schools.push(schEntry);//Add school history object to exisiting array
-};
-
-/**
  * Add a single skill entry to the page
  * @param {string}
  */
@@ -120,7 +62,7 @@ appData.addSchool = function (schoolInstance) {
     $('#education').append(HTMLschoolStart);
     eduEntry = $('.education-entry').last(); //Just added above
     eduEntry.append(HTMLschoolName.replace(appData.placeholderText,
-        schoolInstance.institute
+        schoolInstance.name
         ));
     eduEntry.append(HTMLschoolLocation.replace(appData.placeholderText,
         schoolInstance.location
@@ -149,8 +91,11 @@ appData.populatePage = function () {
         HTMLcontactGeneric, HTMLWelcomeMsg, HTMLskillsStart, HTMLbioPic,
         HTMLworkStart, HTMLworkEmployer, HTMLworkTitle, HTMLschoolStart,
         HTMLschoolName */
-    var bio;
+    var bio, work, education, projects;
     bio = appData.bio;
+    work = appData.work;
+    education = appData.education;
+    projects = appData.projects;
 
     // TODO: Idea: streamline this by moving sections to their own functions.
     $('#header').prepend(HTMLheaderRole.replace(appData.placeholderText,
@@ -166,7 +111,7 @@ appData.populatePage = function () {
         bio.contact.email
         ));
     $('#topContacts').append(HTMLmobile.replace(appData.placeholderText,
-        bio.contact.phone.mobile
+        bio.contact.mobile
         ));
     $('#topContacts').append(HTMLcontactGeneric.replace(appData.placeholderText,
         bio.contact.github).replace('%contact%', 'GitHub'
@@ -175,7 +120,7 @@ appData.populatePage = function () {
         bio.contact.email
         ));
     $('#footerContacts').append(HTMLmobile.replace(appData.placeholderText,
-        bio.contact.phone.mobile
+        bio.contact.mobile
         ));
     $('#footerContacts').append(HTMLcontactGeneric.replace(appData.placeholderText,
         bio.contact.github).replace('%contact%', 'GitHub'
@@ -186,160 +131,187 @@ appData.populatePage = function () {
         ));
     $('#header').append(HTMLskillsStart);
     bio.skills.forEach(appData.addSkill);//Show details for each skill
-    appData.work.forEach(appData.addExperience);//Show details for each work event
-    appData.schools.forEach(appData.addSchool);//Show details for each school
+    work.jobs.forEach(appData.addExperience);//Show details for each work event
+    education.schools.forEach(appData.addSchool);//Show details for each school
+    //education.onlineCourses.forEach();
+    //projects.forEach();
 };
 
 
-//////////////////////////////
-// Load the raw resume data //
-//////////////////////////////
 appData.placeholderText = '%data%'; //common replacement string
-appData.bio = {
-    'name' : 'H. Phil Duby',
-    'role' : 'Web Developer',
-    'contact' : {
-        'phone' : {
-            'mobile' : '(403) 993-2607',
-            'land' : '(403) 456-6104',
-            'work' : undefined
-        },
-        'email' : 'philduby@phriendly.net',
-        'github' : 'https://github.com/mMerlin',
-        'location' : 'Calgary, AB, Canada',
-        'postal' : {
-            'Country' : 'Canada',
-            'city' : 'Calgary',
-            'stateProv' : 'AB',
-            'zipPostal' : 'T3B 4N3',
-            'street1' : '27 Silversprings Drive NW',
-            'street2' : 'Unit 66'
-        }
-    },
-    'avatar' : '',
-    'welcomeMessage' : 'Thank-you for visiting my web page.',
-    'skills' : ['programming', 'analysis', 'desktop support'],
-    'picUrl' : 'images/biopic.jpg'
-};
-
-////////////////////////////
-// load Work History data //
-////////////////////////////
-appData.work = [];
-/*
-appData.loadWorkHistory('employer',
-    'title',
-    'location',
-    'dates',
-    'description'
-    );
-*/
-appData.loadWorkHistory('GDM',
-    'Contract Programmer Analyst',
-    'Calgary, AB, Canada',
-    '2011 - 2012',
-    'Repair and rebuild of contract management web application'
-    );
-appData.loadWorkHistory('The Lambda Geek',
-    'Owner / Operator',
-    'Calgary, AB, Canada',
-    '2009 - 2009',
-    'Computer sales and support'
-    );
-appData.loadWorkHistory('Shaw Cablesystems',
-    'Senior Software Developer',
-    'Calgary, AB, Canada',
-    '2002 - 2008',
-    'Web site application support, Data conversion and green screen '
-        + 'application support'
-    );
-appData.loadWorkHistory('Donortrust',
-    'Volunteer Programmer',
-    'Calgary, AB, Canada',
-    '2006 - 2007',
-    'Work with the group doing design and development of the Donortrust ' +
-        'applications to support the Christmas Future web site'
-    );
-appData.loadWorkHistory('Nortel Networks',
-    'Contract Programmer Analyst',
-    'Calgary, AB, Canada',
-    '1997 - 2001'
-    );
-appData.loadWorkHistory('TransAlta Utilities',
-    'Contract Programmer Analyst',
-    'Calgary, AB, Canada',
-    '1994 - 1997'
-    );
-appData.loadWorkHistory('Rhyason Consultants',
-    'Contract Programmer',
-    'Calgary, AB, Canada',
-    '1993 - 1994'
-    );
-appData.loadWorkHistory('Hydro Mississauga',
-    'Contract Programmer Analyst',
-    'Mississauga, ON, Canada',
-    '1992 - 1993'
-    );
-appData.loadWorkHistory('MONENCO Information Systems Inc',
-    'System Analyst',
-    'Calgary, AB, Canada',
-    '1983 - 1992'
-    );
-appData.loadWorkHistory('Western Canada Summer Games 1983',
-    'Contract Programmer',
-    'Calgary, AB, Canada',
-    '1983 - 1983'
-    );
-appData.loadWorkHistory('Western Cooperative Fertilizers, Ltd',
-    'Computer Programmer',
-    'Calgary, AB, Canada',
-    '1980 - 1983'
-    );
-appData.loadWorkHistory('CIBC',
-    'MICR Sorter Operator',
-    'Calgary, AB, Canada',
-    '1975 - 1980'
-    );
-
-//////////////////////////////
-// load School History data //
-//////////////////////////////
-appData.schools = [];
-/*
-appData.loadSchoolHistory('school',
-    'locaiton',
-    'dates',
-    'degree',
-    'majore'
-    );
-*/
-appData.loadSchoolHistory('SAIT',
-    'Calgary, AB, Canada',
-    '1976 - 1980',
-    'Computer Science',
-    'selected courses'
-    );
-appData.loadSchoolHistory('U of C',
-    'Calgary, AB, Canada',
-    '1976 - 1982',
-    'Computer Science',
-    'selected courses'
-    );
-appData.loadSchoolHistory('SAIT',
-    'Calgary, AB, Canada',
-    '1981 - 1983',
-    'Computer Science',
-    'Technical Programming Certificate'
-    );
-
+//////////////////////////////////////////
+// Load the raw bio data for the resume //
+//////////////////////////////////////////
 /**
- * Schools with cities, majors, minors, graduation years and online course
- * information
+ * object containing general biographical information for the resume
+ *
+ * @type {Object}
  *
  * The Front-End Developer nanodegree course style guide
  * http://udacity.github.io/frontend-nanodegree-styleguide/javascript.html
  * says to use single quotes for JavaScript strings, but double quotes are required
  * for json.
+ */
+appData.bio = {
+    "name" : "H. Phil Duby",
+    "role" : "Web Developer",
+    "contact" : {
+        "voice" : {
+            "mobile" : "(403) 993-2607",
+            "land" : "(403) 456-6104",
+            "work" : "undefined",
+            "skype" : "x"
+        },
+        "mobile" : "(403) 993-2607",
+        "email" : "philduby@phriendly.net",
+        "github" : "mMerlin",
+        "twitter" : "H. Phil Duby",
+        "location" : "Calgary, AB, Canada",
+        "postal" : {
+            "Country" : "Canada",
+            "city" : "Calgary",
+            "stateProv" : "AB",
+            "zipPostal" : "T3B 4N3",
+            "street1" : "27 Silversprings Drive NW",
+            "street2" : "Unit 66"
+        }
+    },
+    "welcomeMessage" : "Thank-you for visiting my web page.",
+    "skills" : ["programming", "analysis", "desktop support"],
+    "picUrl" : "images/biopic.jpg"
+};
+
+
+////////////////////////////
+// load Work History data //
+////////////////////////////
+/**
+ * jobs in work history
+ *
+ * UDACITY > Javascript Basic > Lesson 1 - Data Types >
+ *   All the Resume Sections Quiz
+ *
+ * @type {Object}
+ *
+ * The styleguide says to use string concatenation to break long lines, but
+ * that is not valid when complying with JSON syntax.
+ */
+appData.work = {
+    "jobs" : [
+        {
+            "employer" : "GDM",
+            "title" : "Contract Programmer Analyst",
+            "location" : "Calgary, AB, Canada",
+            "dates" : "2011 - 2012",
+            "description" : "Repair and rebuild of contract management web application"
+        },
+        {
+            "employer" : "The Lambda Geek",
+            "title" : "Owner / Operator",
+            "location" : "Calgary, AB, Canada",
+            "dates" : "2009",
+            "description" : "Computer sales with hardware and desktop support"
+        },
+        {
+            "employer" : "Shaw Cablesystems",
+            "title" : "Senior Software Developer",
+            "location" : "Calgary, AB, Canada",
+            "dates" : "2002 - 2008",
+            "description" : "Web site application support, Data conversion and green screen application support"
+        },
+        {
+            "employer" : "Donortrust",
+            "title" : "Volunteer Programmer",
+            "location" : "Calgary, AB, Canada",
+            "dates" : "2006 - 2007",
+            "description" : "Work with the group doing design and development of the Donortrust applications to support the Christmas Future web site"
+        },
+        {
+            "employer" : "Nortel Networks",
+            "title" : "Contract Programmer Analyst",
+            "location" : "Calgary, AB, Canada",
+            "dates" : "1997 - 2001",
+            "description" : "Business appliction Y2K conversion and support"
+        },
+        {
+            "employer" : "TransAlta Utilities",
+            "title" : "Contract Programmer Analyst",
+            "location" : "Calgary, AB, Canada",
+            "dates" : "1994 - 1997",
+            "description" : "Application support"
+        },
+        {
+            "employer" : "Rhyason Consultants",
+            "title" : "Contract Programmer",
+            "location" : "Calgary, AB, Canada",
+            "dates" : "1993 - 1994",
+            "description" : "Oilwell Log Chart analysis Application conversion"
+        },
+        {
+            "employer" : "Hydro Mississauga",
+            "title" : "Contract Programmer Analyst",
+            "location" : "Mississauga, ON, Canada",
+            "dates" : "1992 - 1993",
+            "description" : "GIS application development"
+        },
+        {
+            "employer" : "MONENCO Information Systems Inc",
+            "title" : "System Analyst",
+            "location" : "Calgary, AB, Canada",
+            "dates" : "1983 - 1992",
+            "description" : "CADD system application development and support"
+        },
+        {
+            "employer" : "Western Canada Summer Games 1983",
+            "title" : "Contract Programmer",
+            "location" : "Calgary, AB, Canada",
+            "dates" : "1983 - 1983",
+            "description" : "Results network reporting development and support"
+        },
+        {
+            "employer" : "Western Cooperative Fertilizers, Ltd",
+            "title" : "Computer Programmer",
+            "location" : "Calgary, AB, Canada",
+            "dates" : "1980 - 1983",
+            "description" : "Business application conversion and development"
+        },
+        {
+            "employer" : "CIBC",
+            "title" : "MICR Sorter Operator",
+            "location" : "Calgary, AB, Canada",
+            "dates" : "1975 - 1980",
+            "description" : "Operation of cheque sorter equipment at bank data centre"
+        }
+    ]
+};
+
+//////////////////////////////
+// Load project information //
+//////////////////////////////
+/**
+ * Featured projects for the resume
+ *
+ * UDACITY > Javascript Basic > Lesson 1 - Data Types >
+ *   All the Resume Sections Quiz
+ *
+ * @type {Object}
+ */
+appData.projects = {
+    "projects" : [
+        {
+            "title" : "Page Mockup",
+            "dates" : "2014",
+            "description" : "create web page using bootstrap framework to match provided mockup image",
+            "images" : [""]
+        }
+    ]
+};
+
+//////////////////////////////
+// load School History data //
+//////////////////////////////
+/**
+ * Schools with cities, majors, minors, dates and online course information
  *
  * UDACITY > Javascript Basic > Lesson 1 - Data Types >
  *   Validating JSON Quiz
@@ -348,50 +320,43 @@ appData.loadSchoolHistory('SAIT',
 appData.Education = {
     "schools": [
         {
-            "institute": "SAIT",
+            "name": "SAIT",
             "location": "Calgary, AB, Canada",
-            "graduation": 1980,
             "degree": "none",
-            "majors": ["selected CS courses"],
+            "majors": ["selected CS courses", "Technical Programming Certificate"],
+            "dates": "1980,1983",
             "url": "http://www.sait.ca/"
         },
         {
-            "institute": "U of C",
+            "name": "U of C",
             "location": "Calgary, AB, Canada",
-            "graduation": 1982,
             "degree": "none",
             "majors": ["selected CS courses"],
+            "dates": 1982,
             "url": "http://ucalgary.ca/"
-        },
-        {
-            "institute": "SAIT",
-            "location": "Calgary, AB, Canada",
-            "graduation": 1983,
-            "degree": "none",
-            "majors": ["Technical Programming Certificate"],
-            "url": "http://www.sait.ca/"
         }
     ],
     "onlineCourses": [
         {
-            "institute": "Udacity",
-            "title": "Introduction to Computer Science",
-            "completion": 2012,
-            "url": "https://www.udacity.com/course/cs101"
+            "school": "Udacity",
+            "title": "Front-End Web Developer NanoDegree",
+            "dates": 2015,
+            "url": "https://www.udacity.com/course/nd001"
         },
         {
-            "institute": "Udacity",
+            "school": "Udacity",
             "title": "Artificial Intelligence for Robotics",
-            "completion": 2012,
+            "dates": 2012,
             "url": "https://www.udacity.com/course/cs373"
+        },
+        {
+            "title": "Introduction to Computer Science",
+            "school": "Udacity",
+            "dates": 2012,
+            "url": "https://www.udacity.com/course/cs101"
         }
     ]
 };
-//appData.Education = {"schools": []}
-
-//ONLINE
-// TODO: alternative to 'class', which is a js keyword
-//appData.wrk['class'] = 'Adobe Flash CS5';
 
 appData.populatePage();
 
