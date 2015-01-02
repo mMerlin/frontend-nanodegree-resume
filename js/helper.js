@@ -1,3 +1,5 @@
+/*jslint browser: true, devel: true, indent: 2 */
+/*global $, clickLocations, inName */
 /*
 
 This file contains all of the code running in the background that makes resumeBuilder.js possible. We call these helper functions because they support your code in this course.
@@ -62,9 +64,10 @@ var googleMap = '<div id="map"></div>';
 /*
 The International Name challenge in Lesson 2 where you'll create a function that will need this helper code to run. Don't delete! It hooks up your code to the button you'll be appending.
 */
-$(document).ready(function() {
-  $('button').click(function() {
-    var iName = inName(name) || function(){};
+$(document).ready(function () {
+  "use strict";
+  $('button').click(function () {
+    var iName = inName(name) || function () {};
     $('#name').html(iName);
   });
 });
@@ -74,7 +77,8 @@ The next few lines about clicks are for the Collecting Click Locations quiz in L
 */
 clickLocations = [];
 
-function logClicks(x,y) {
+function logClicks(x, y) {
+  "use strict";
   clickLocations.push(
     {
       x: x,
@@ -84,8 +88,9 @@ function logClicks(x,y) {
   console.log('x location: ' + x + '; y location: ' + y);
 }
 
-$(document).click(function(loc) {
-  // your code goes here!
+$(document).click(function (loc) {
+  "use strict";
+  //Pass the click coordinates, relative to the document, to the logging function
   logClicks(loc.pageX, loc.pageY);
 });
 
