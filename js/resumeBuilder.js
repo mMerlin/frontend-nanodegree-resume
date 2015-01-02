@@ -248,7 +248,7 @@ appData.showSkill = function (singleSkill) {
 appData.showAllSkills = function (bio) {
     "use strict";
     /*global HTMLskillsStart */
-    if (bio && bio.skills && bio.skills.length > 0) {
+    if (bio && bio.skills && $.isArray(bio.skills) && bio.skills.length > 0) {
         $('#header').append(HTMLskillsStart);
         bio.skills.forEach(appData.showSkill);//append all skills listed
     }
