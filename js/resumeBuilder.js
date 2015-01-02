@@ -271,6 +271,7 @@ appData.showAllJobs = function (work) {
     var jobNum, jobEle, fmtEmployer, fmtTitle;
     if (work && work.jobs && $.isArray(work.jobs)) {
         for (jobNum = 0; jobNum < work.jobs.length; jobNum += 1) {
+            // Create (div) wrapper to hold details for single job
             $('#workExperience').append(HTMLworkStart);
             fmtEmployer = HTMLworkEmployer.replace(appData.placeholderText,
                 work.jobs[jobNum].employer || 'no employer'
@@ -292,6 +293,8 @@ appData.showAllJobs = function (work) {
         }// ./for
     }// ./if
 };//End appData.showAllJobs(work)
+// s/showAllJobs/displayWork/wh
+// to match name used in video
 
 appData.showAllSkills(appData.bio);
 appData.showAllJobs(appData.work);
