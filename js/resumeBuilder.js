@@ -254,7 +254,37 @@ appData.showAllSkills = function (bio) {
     }
 };//End appData.showAllSkills(bio)
 
+/**
+ * Add the employment history details to the page.
+ *
+ * @param  {object} work work experience information
+ * @return {undefined}
+ *
+ * UDACITY > Javascript Basic > Lesson 2 - Flow Control >
+ * For-In Loops Quiz
+ */
+appData.showAllJobs = function (work) {
+    "use strict";
+    /*global HTMLworkStart, HTMLworkEmployer, HTMLworkTitle */
+    var job, fmtEmployer, fmtTitle;
+    if (work && work.jobs && $.isArray(work.jobs)) {
+        for (job in work.jobs) {// processing order not defined
+            if (work.jobs.hasOwnProperty(job)) {// skip prototype chain props
+                $('#workExperience').append(HTMLworkStart);
+                fmtEmployer = HTMLworkEmployer.replace(appData.placeholderText,
+                    work.jobs[job].employer || 'no employer'
+                    );
+                fmtTitle = HTMLworkTitle.replace(appData.placeholderText,
+                    work.jobs[job].title || 'no title'
+                    );
+                $('.work-entry:last').append(fmtEmployer + fmtTitle);
+            }
+        }
+    }
+};//End appData.showAllJobs(work)
+
 appData.showAllSkills(appData.bio);
+appData.showAllJobs(appData.work);
 //appData.populatePage();
 
 //appData.resumeHTML = {};
