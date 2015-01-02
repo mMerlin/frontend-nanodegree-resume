@@ -111,27 +111,37 @@ need to load. You'll see a lot of <link>s to CSS files for styles and
         an opening and closing set of slash asterisks for block comments.
     */
 
-
+   var appData;
+    if (typeof appData === 'undefined') {
+      appData = {};
+    } else {
+      if (typeof appData !== 'object') {
+        alert('AppData is already declared as type ' + (typeof appData));
+      }
+    }
+    appData.showAsEmpty = function (root) {
+      root.style.display = 'none'
+    }
     if(document.getElementsByClassName('flex-item').length === 0) {
-      document.getElementById('topContacts').style.display = 'none';
+      appData.showAsEmpty(document.getElementById('topContacts'));
     }
     if(document.getElementsByTagName('h1').length === 0) {
-      document.getElementById('header').style.display = 'none';
+      appData.showAsEmpty(document.getElementById('header'));
     }
     if(document.getElementsByClassName('work-entry').length === 0) {
-      document.getElementById('workExperience').style.display = 'none';
+      appData.showAsEmpty(document.getElementById('workExperience'));
     }
     if(document.getElementsByClassName('project-entry').length === 0) {
-      document.getElementById('projects').style.display = 'none';
+      appData.showAsEmpty(document.getElementById('projects'));
     }
     if(document.getElementsByClassName('education-entry').length === 0) {
-      document.getElementById('education').style.display = 'none';
+      appData.showAsEmpty(document.getElementById('education'));
     }
     if(document.getElementsByClassName('flex-item').length === 0) {
-      document.getElementById('letsConnect').style.display = 'none';
+      appData.showAsEmpty(document.getElementById('letsConnect'));
     }
     if(document.getElementById('map') === null) {
-      document.getElementById('mapDiv').style.display = 'none';
+      appData.showAsEmpty(document.getElementById('mapDiv'));
     }
   </script>
 </body>
