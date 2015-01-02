@@ -262,25 +262,35 @@ appData.showAllSkills = function (bio) {
  *
  * UDACITY > Javascript Basic > Lesson 2 - Flow Control >
  * For-In Loops Quiz
+ * Work Quiz
  */
 appData.showAllJobs = function (work) {
     "use strict";
-    /*global HTMLworkStart, HTMLworkEmployer, HTMLworkTitle */
-    var job, fmtEmployer, fmtTitle;
+    /*global HTMLworkStart, HTMLworkEmployer, HTMLworkTitle, HTMLworkLocation,
+        HTMLworkDates, HTMLworkDescription */
+    var jobNum, jobEle, fmtEmployer, fmtTitle;
     if (work && work.jobs && $.isArray(work.jobs)) {
-        for (job in work.jobs) {// processing order not defined
-            if (work.jobs.hasOwnProperty(job)) {// skip prototype chain props
-                $('#workExperience').append(HTMLworkStart);
-                fmtEmployer = HTMLworkEmployer.replace(appData.placeholderText,
-                    work.jobs[job].employer || 'no employer'
-                    );
-                fmtTitle = HTMLworkTitle.replace(appData.placeholderText,
-                    work.jobs[job].title || 'no title'
-                    );
-                $('.work-entry:last').append(fmtEmployer + fmtTitle);
-            }
-        }
-    }
+        for (jobNum = 0; jobNum < work.jobs.length; jobNum += 1) {
+            $('#workExperience').append(HTMLworkStart);
+            fmtEmployer = HTMLworkEmployer.replace(appData.placeholderText,
+                work.jobs[jobNum].employer || 'no employer'
+                );
+            fmtTitle = HTMLworkTitle.replace(appData.placeholderText,
+                work.jobs[jobNum].title || 'no title'
+                );
+            jobEle = $('.work-entry:last');//Only get wrapper element once
+            jobEle.append(fmtEmployer + fmtTitle);
+            jobEle.append(HTMLworkLocation.replace(appData.placeholderText,
+                work.jobs[jobNum].location || 'no location'
+                ));
+            jobEle.append(HTMLworkDates.replace(appData.placeholderText,
+                work.jobs[jobNum].dates || 'no dates'
+                ));
+            jobEle.append(HTMLworkDescription.replace(appData.placeholderText,
+                work.jobs[jobNum].description || 'no description'
+                ));
+        }// ./for
+    }// ./if
 };//End appData.showAllJobs(work)
 
 appData.showAllSkills(appData.bio);
