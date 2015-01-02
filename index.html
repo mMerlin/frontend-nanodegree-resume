@@ -119,29 +119,29 @@ need to load. You'll see a lot of <link>s to CSS files for styles and
         alert('AppData is already declared as type ' + (typeof appData));
       }
     }
-    appData.showAsEmpty = function (root) {
-      root.style.backgroundColor = 'black';
+    appData.showAsEmpty = function (rootId) {
+      document.getElementById(rootId).style.backgroundColor = 'black';
     }
     if(document.getElementsByClassName('flex-item').length === 0) {
-      appData.showAsEmpty(document.getElementById('topContacts'));
+      appData.showAsEmpty('topContacts');
     }
     if(document.getElementsByTagName('h1').length === 0) {
-      appData.showAsEmpty(document.getElementById('header'));
+      appData.showAsEmpty('header');
     }
     if(document.getElementsByClassName('work-entry').length === 0) {
-      appData.showAsEmpty(document.getElementById('workExperience'));
+      appData.showAsEmpty('workExperience');
     }
     if(document.getElementsByClassName('project-entry').length === 0) {
-      appData.showAsEmpty(document.getElementById('projects'));
+      appData.showAsEmpty('projects');
     }
     if(document.getElementsByClassName('education-entry').length === 0) {
-      appData.showAsEmpty(document.getElementById('education'));
+      appData.showAsEmpty('education');
     }
     if(document.getElementsByClassName('flex-item').length === 0) {
-      appData.showAsEmpty(document.getElementById('letsConnect'));
+      appData.showAsEmpty('letsConnect');
     }
     if(document.getElementById('map') === null) {
-      appData.showAsEmpty(document.getElementById('mapDiv'));
+      appData.showAsEmpty('mapDiv');
     }
   </script>
 </body>
