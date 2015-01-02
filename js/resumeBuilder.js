@@ -45,6 +45,8 @@ appData.bio = {
     "skills" : ["programming", "analysis", "desktop support"],
     "picUrl" : "images/biopic.jpg"
 };
+//"skills" : html, css, javascript, jQuery, bootstrap, JSON
+// framework, library, language, data format
 
 
 ////////////////////////////
@@ -223,6 +225,36 @@ appData.Education = {
     ]
 };
 
+
+/**
+ * Add a single skill entry to the page
+ * @param  {string} singleSkill The name/description for a single skill
+ * @return {undefined}
+ */
+appData.showSkill = function (singleSkill) {
+    "use strict";
+    /*global HTMLskills */
+    $('#skills').append(HTMLskills.replace(appData.placeholderText,
+        singleSkill
+        ));
+};//End appData.showSkill(skill)
+
+/**
+ * Add the skills summary to the header, when any skills are provided in the
+ * bio data
+ * @param  {object} bio biography attributes for resume
+ * @return {undefined}
+ */
+appData.showAllSkills = function (bio) {
+    "use strict";
+    /*global HTMLskillsStart */
+    if (bio && bio.skills && bio.skills.length > 0) {
+        $('#header').append(HTMLskillsStart);
+        bio.skills.forEach(appData.showSkill);//append all skills listed
+    }
+};//End appData.showAllSkills(bio)
+
+appData.showAllSkills(appData.bio);
 //appData.populatePage();
 
 //appData.resumeHTML = {};
