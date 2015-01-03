@@ -169,7 +169,13 @@ appData.projects = {
             "title" : "Page Mockup",
             "dates" : "2014",
             "description" : "create web page using bootstrap framework to match provided mockup image",
-            "images" : [""]
+            "images" : []
+        },
+        {
+            "title" : "resume",
+            "dates" : "2015",
+            "description" : "Build dynamic online resume",
+            "images" : []
         }
     ]
 };
@@ -327,7 +333,7 @@ function inName(localNames) {
     "use strict";
     var inNames, nm, nameParts, finalName;
 
-    nameParts = localNames.toLocaleLowerCase().split(" ");//everything to lowercase
+    nameParts = localNames.trim().toLocaleLowerCase().split(" ");//everything to lowercase
     finalName = nameParts.length - 1;//index to last part of name === surname
     for (nm = 0; nm < finalName; nm += 1) {//First, middle, and initials
         if (nameParts[nm].length > 0) {//Safety check: handle multiple space between names
@@ -347,11 +353,53 @@ appData.showInternationalize = function () {
     $('#main').append(internationalizeButton);
 };
 
+/**
+ * Add all details for a single project to the resume web page
+ * @param {object} projectObject Object with properties holding project details
+ */
+appData.projects.addOneProject = function (projectObject) {
+    "use strict";
+    /*global HTMLprojectStart, HTMLprojectTitle, HTMLprojectDates,
+        HTMLprojectDescription, HTMLprojectImage */
+    var prjEle, img;
+    $('#projects').append(HTMLprojectStart);
+    prjEle = $('.project-entry:last');//The just added project wrapper element
+    prjEle.append(HTMLprojectTitle.replace(appData.placeholderText,
+        projectObject.title || 'no project title'
+        ));
+    prjEle.append(HTMLprojectDates.replace(appData.placeholderText,
+        projectObject.dates || 'no project dates'
+        ));
+    prjEle.append(HTMLprojectDescription.replace(appData.placeholderText,
+        projectObject.description || 'no project description'
+        ));
+    for (img = 0; img < projectObject.images.length; img += 1) {
+        prjEle.append(HTMLprojectImage.replace(appData.placeholderText,
+            projectObject.images[img]
+            ));
+    }
+};
+
+/**
+ * Add formatted project information to the web page
+ *
+ * Is there a way to get to the projects data (array) using some sort of
+ * relative path?  ../projects[]
+ *
+ * @return {undefined}
+ */
+appData.projects.display = function () {
+    "use strict";
+    //appData.projects.projects ==? self.parent.projects
+    appData.projects.projects.forEach(appData.projects.addOneProject);
+};
+
 //appData.populatePage();
 appData.showBio(appData.bio);
 appData.showAllSkills(appData.bio);
 appData.showAllJobs(appData.work);
-appData.showInternationalize();
+//appData.showInternationalize();
+appData.projects.display();
 
 //appData.resumeHTML = {};
 //ResumeHTML.headerName = '{stuff}%data%{stuff}';
