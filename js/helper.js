@@ -67,6 +67,7 @@ The International Name challenge in Lesson 2 where you'll create a function that
 $(document).ready(function () {
   "use strict";
   $('button').click(function () {
+    var name = $('#name')[0].innerText;
     var iName = inName(name) || function () {};
     $('#name').html(iName);
   });

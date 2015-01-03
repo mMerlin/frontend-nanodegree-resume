@@ -1,4 +1,4 @@
-/*jslint browser: true */
+/*jslint browser: true, devel: true, indent: 4 */
 /*global $ */
 var appData = {};
 appData.placeholderText = '%data%'; //common replacement string
@@ -255,6 +255,19 @@ appData.showAllSkills = function (bio) {
 };//End appData.showAllSkills(bio)
 
 /**
+ * Add the basic biographical information to the page
+ * @param  {objject} bio Biographical data object
+ * @return {undefined}
+ */
+appData.showBio = function (bio) {
+    "use strict";
+    /*global HTMLheaderName */
+    $('#header').prepend(HTMLheaderName.replace(appData.placeholderText,
+        bio.name || 'the unknown comic'
+        ));
+};
+
+/**
  * Add the employment history details to the page.
  *
  * @param  {object} work work experience information
@@ -296,9 +309,49 @@ appData.showAllJobs = function (work) {
 // s/showAllJobs/displayWork/wh
 // to match name used in video
 
+/**
+ * Return the internationaized version of a full name
+ *
+ * Direct function, instead of variable as function, because it is referenced
+ * from pre-written helper code.
+ *
+ * @param  {string} localNames Full name, with surname last.  Names separated
+ *                             by spaces.  Handles multiple (middle) names
+ *                             and/or initials, as long as each initial is
+ *                             separated from surrounding names and initials by
+ *                             spaces.
+ * @return {string}            Internationlized full name; surname uppercase,
+ *                             with the rest leading caps only.
+ */
+function inName(localNames) {
+    "use strict";
+    var inNames, nm, nameParts, finalName;
+
+    nameParts = localNames.toLocaleLowerCase().split(" ");//everything to lowercase
+    finalName = nameParts.length - 1;//index to last part of name === surname
+    for (nm = 0; nm < finalName; nm += 1) {//First, middle, and initials
+        if (nameParts[nm].length > 0) {//Safety check: handle multiple space between names
+            nameParts[nm] = nameParts[nm][0].toLocaleUpperCase() + //Leading uppercase
+                nameParts[nm].slice(1);
+        }
+    }
+    nameParts[finalName] = nameParts[finalName].toLocaleUpperCase();//last name uppercase
+
+    inNames = nameParts.join(" ");
+    return inNames;
+}
+
+appData.showInternationalize = function () {
+    "use strict";
+    /*global internationalizeButton */
+    $('#main').append(internationalizeButton);
+};
+
+//appData.populatePage();
+appData.showBio(appData.bio);
 appData.showAllSkills(appData.bio);
 appData.showAllJobs(appData.work);
-//appData.populatePage();
+appData.showInternationalize();
 
 //appData.resumeHTML = {};
 //ResumeHTML.headerName = '{stuff}%data%{stuff}';
