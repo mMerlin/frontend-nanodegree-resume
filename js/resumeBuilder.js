@@ -20,7 +20,7 @@ appData.placeholderText = '%data%'; //common replacement string
 appData.bio = {
     "name" : "H. Phil Duby",
     "role" : "Web Developer",
-    "contact" : {
+    "contacts" : {
         "voice" : {
             "mobile" : "(403) 993-2607",
             "land" : "(403) 456-6104",
@@ -190,7 +190,7 @@ appData.projects = {
  *   Validating JSON Quiz
  * @type {Object}
  */
-appData.Education = {
+appData.education = {
     "schools": [
         {
             "name": "SAIT",
@@ -394,14 +394,36 @@ appData.projects.display = function () {
     appData.projects.projects.forEach(appData.projects.addOneProject);
 };
 
+/**
+ * Build the map to show on the page
+ * @return {undefined}
+ */
+appData.showMap = function () {
+    "use strict";
+    /*global googleMap */
+    $('#mapDiv').append(googleMap);
+};
+
 //appData.populatePage();
 appData.showBio(appData.bio);
 appData.showAllSkills(appData.bio);
 appData.showAllJobs(appData.work);
 //appData.showInternationalize();
 appData.projects.display();
+appData.showMap();
 
 //appData.resumeHTML = {};
 //ResumeHTML.headerName = '{stuff}%data%{stuff}';
 //var formatedResume = {};
 //formatedResume.Name = ResumeHTML.header.name.replace(placeholderText, me.name);
+
+/*
+    TODO:
+
+    added functionality
+        - by default truncate the long list of employment history
+        - add "more" button (aro)
+            - aro: hide, more, less, reset
+        - same for skills
+        - hover popups for detail expansion
+ */

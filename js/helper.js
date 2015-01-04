@@ -1,5 +1,5 @@
 /*jslint browser: true, devel: true, indent: 2 */
-/*global $, clickLocations, inName */
+/*global $, inName, appData */
 /*
 
 This file contains all of the code running in the background that makes resumeBuilder.js possible. We call these helper functions because they support your code in this course.
@@ -67,8 +67,9 @@ The International Name challenge in Lesson 2 where you'll create a function that
 $(document).ready(function () {
   "use strict";
   $('button').click(function () {
-    var name = $('#name')[0].innerText;
-    var iName = inName(name) || function () {};
+    var name, iName;
+    name = $('#name')[0].innerText;
+    iName = inName(name) || function () {};
     $('#name').html(iName);
   });
 });
@@ -76,11 +77,15 @@ $(document).ready(function () {
 /*
 The next few lines about clicks are for the Collecting Click Locations quiz in Lesson 2.
 */
-clickLocations = [];
+var appData;
+if (appData === undefined) {
+  appData = {};
+}
+appData.clickLocations = [];
 
 function logClicks(x, y) {
   "use strict";
-  clickLocations.push(
+  appData.clickLocations.push(
     {
       x: x,
       y: y
@@ -109,10 +114,12 @@ var map;    // declares a global map variable
 Start here! initializeMap() is called when page is loaded.
 */
 function initializeMap() {
+  "use strict";
+  /*global google */
 
-  var locations;
+  var locations, mapOptions;
 
-  var mapOptions = {
+  mapOptions = {
     disableDefaultUI: true
   };
 
@@ -124,29 +131,43 @@ function initializeMap() {
   /*
   locationFinder() returns an array of every location string from the JSONs
   written for bio, education, and work.
+
+  This was found to cause "OVER_QUERY_LIMIT" calling the google maps api.  Since
+  the array was mostly duplicates, changed to only include unique values.
   */
   function locationFinder() {
+    var school, job, uniqueLocations;
 
-    // initializes an empty array
-    var locations = [];
+    uniqueLocations = [];// initializes an empty array: no locations found yet
 
-    // adds the single location property from bio to the locations array
-    locations.push(bio.contacts.location);
+    //An inner function to DRY the logic needed to populated the array
+    function addLocation(location) {
+      if ($.inArray(location, uniqueLocations) < 0) {
+        // It is a new location.  Add it to the array
+        uniqueLocations.push(location);
+      }
+    }// ./addLocation
+
+    // add the single location property from bio to the locations data storage
+    if (appData.bio.contacts.location) {//Safety net: make sure it is not empty
+      addLocation(appData.bio.contacts.location);
+    }
 
     // iterates through school locations and appends each location to
     // the locations array
-    for (var school in education.schools) {
-      locations.push(education.schools[school].location);
+    for (school in appData.education.schools) {
+      /*jslint forin: true */ //Applies to whole function, not just the current for
+      addLocation(appData.education.schools[school].location);
     }
 
     // iterates through work locations and appends each location to
     // the locations array
-    for (var job in work.jobs) {
-      locations.push(work.jobs[job].location);
+    for (job in appData.work.jobs) {
+      addLocation(appData.work.jobs[job].location);
     }
 
-    return locations;
-  }
+    return uniqueLocations;
+  }// ./locationFinder
 
   /*
   createMapMarker(placeData) reads Google Places search results to create map pins.
@@ -154,15 +175,17 @@ function initializeMap() {
   about a single location.
   */
   function createMapMarker(placeData) {
+    /*global google */
+    var lat, lon, name, bounds, marker, infoWindow;
 
     // The next lines save location data from the search result object to local variables
-    var lat = placeData.geometry.location.lat();  // latitude from the place service
-    var lon = placeData.geometry.location.lng();  // longitude from the place service
-    var name = placeData.formatted_address;   // name of the place from the place service
-    var bounds = window.mapBounds;            // current boundaries of the map window
+    lat = placeData.geometry.location.lat();  // latitude from the place service
+    lon = placeData.geometry.location.lng();  // longitude from the place service
+    name = placeData.formatted_address;   // name of the place from the place service
+    bounds = window.mapBounds;            // current boundaries of the map window
 
     // marker is an object with additional data about the pin for a single location
-    var marker = new google.maps.Marker({
+    marker = new google.maps.Marker({
       map: map,
       position: placeData.geometry.location,
       title: name
@@ -171,12 +194,12 @@ function initializeMap() {
     // infoWindows are the little helper windows that open when you click
     // or hover over a pin on a map. They usually contain more information
     // about a location.
-    var infoWindow = new google.maps.InfoWindow({
+    infoWindow = new google.maps.InfoWindow({
       content: name
     });
 
     // hmmmm, I wonder what this is about...
-    google.maps.event.addListener(marker, 'click', function() {
+    google.maps.event.addListener(marker, 'click', function () {
       // your code goes here!
     });
 
@@ -194,7 +217,7 @@ function initializeMap() {
   If so, it creates a new map marker for that location.
   */
   function callback(results, status) {
-    if (status == google.maps.places.PlacesServiceStatus.OK) {
+    if (status === google.maps.places.PlacesServiceStatus.OK) {
       createMapMarker(results[0]);
     }
   }
@@ -204,21 +227,23 @@ function initializeMap() {
   and fires off Google place searches for each location
   */
   function pinPoster(locations) {
+    var service, place, request;
 
     // creates a Google place search service object. PlacesService does the work of
     // actually searching for location data.
-    var service = new google.maps.places.PlacesService(map);
+    service = new google.maps.places.PlacesService(map);
 
     // Iterates through the array of locations, creates a search object for each location
-    for (var place in locations) {
-
+    for (place in locations) {
+      /*jslint forin: true */ //applies to the whole function, not just this block
       // the search request object
-      var request = {
+      request = {
         query: locations[place]
       };
 
       // Actually searches the Google Maps API for location data and runs the callback
       // function with the search results after each search.
+      // Very easy to overload with too many locations
       service.textSearch(request, callback);
     }
   }
@@ -240,11 +265,13 @@ Uncomment the code below when you're ready to implement a Google Map!
 */
 
 // Calls the initializeMap() function when the page loads
-//window.addEventListener('load', initializeMap);
+window.addEventListener('load', initializeMap);
 
 // Vanilla JS way to listen for resizing of the window
 // and adjust map bounds
-//window.addEventListener('resize', function(e) {
+window.addEventListener('resize', function () {//function (e)
+  "use strict";
+  /*global mapBounds */
   // Make sure the map bounds get updated on page resize
-//  map.fitBounds(mapBounds);
-//});
+  map.fitBounds(mapBounds);
+});
