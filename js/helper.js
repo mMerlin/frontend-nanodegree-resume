@@ -174,21 +174,18 @@ function initializeMap() {
       }// ./findLocation()
       matchEntry = findLocation(location);
       if (matchEntry < 0) {
-        //new location, just add it
-        uniqueLocations.push({
+        //no existing information about the location: create an entry to hold it
+        matchEntry = uniqueLocations.push({
           'location' : location,
-          'reasons' : [{
-            'source' : source,
-            'occurrence' : index
-          }]
+          'reasons' : []
         });
-      } else {// !(matchEntry < 0)
-        //old location, add new reason
-        uniqueLocations[matchEntry].reasons.push({
-          'source' : source,
-          'occurrence' : index
-        });
-      }// ./else
+        matchEntry -= 1;//Adjust from new length to last (just added) index
+      }// ./(matchEntry < 0)
+      //At the point there is always an entry: add the new reason to it
+      uniqueLocations[matchEntry].reasons.push({
+        'source' : source,
+        'occurrence' : index
+      });
     }// ./addLocation
 
     // add the single location property from bio to the locations data storage
