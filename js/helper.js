@@ -134,6 +134,24 @@ function initializeMap() {
 
   This was found to cause "OVER_QUERY_LIMIT" calling the google maps api.  Since
   the array was mostly duplicates, changed to only include unique values.
+
+  To facility later extension of the map capabilities (with infoWindow), the
+  simple array of location strings has been replaced by an array of objects
+  each of which contains a {string} property for the location, plus a reason
+  property holding an array of objects, each of which provides linkage details
+  about one reason (data source) the location was included.
+
+  locReasons = [
+    {
+      location : 'string',
+      reasons : [
+        {
+          source : enumeration, //schools, jobs, contacts
+          occurrence : index //undefined for contacts which is not an array
+        }//, ...
+      ]
+    }//, ...
+  ];
   */
   function locationFinder() {
     var school, job, uniqueLocations;
@@ -141,29 +159,54 @@ function initializeMap() {
     uniqueLocations = [];// initializes an empty array: no locations found yet
 
     //An inner function to DRY the logic needed to populated the array
-    function addLocation(location) {
-      if ($.inArray(location, uniqueLocations) < 0) {
-        // It is a new location.  Add it to the array
-        uniqueLocations.push(location);
-      }
+    //source and index are sufficient to identify where the location was found
+    function addLocation(location, source, index) {
+      var matchEntry;
+      //An inner function to find any existing entry for a location
+      function findLocation(matchLocation) {
+        var i;
+        for (i = 0; i < uniqueLocations.length; i += 1) {
+          if (uniqueLocations[i].location === matchLocation) {
+            return i;
+          }
+        }
+        return -1;//No match found
+      }// ./findLocation()
+      matchEntry = findLocation(location);
+      if (matchEntry < 0) {
+        //new location, just add it
+        uniqueLocations.push({
+          'location' : location,
+          'reasons' : [{
+            'source' : source,
+            'occurrence' : index
+          }]
+        });
+      } else {// !(matchEntry < 0)
+        //old location, add new reason
+        uniqueLocations[matchEntry].reasons.push({
+          'source' : source,
+          'occurrence' : index
+        });
+      }// ./else
     }// ./addLocation
 
     // add the single location property from bio to the locations data storage
     if (appData.bio.contacts.location) {//Safety net: make sure it is not empty
-      addLocation(appData.bio.contacts.location);
+      addLocation(appData.bio.contacts.location, 'contacts');
     }
 
     // iterates through school locations and appends each location to
     // the locations array
     for (school in appData.education.schools) {
       /*jslint forin: true */ //Applies to whole function, not just the current for
-      addLocation(appData.education.schools[school].location);
+      addLocation(appData.education.schools[school].location, 'schools', school);
     }
 
     // iterates through work locations and appends each location to
     // the locations array
     for (job in appData.work.jobs) {
-      addLocation(appData.work.jobs[job].location);
+      addLocation(appData.work.jobs[job].location, 'jobs', job);
     }
 
     return uniqueLocations;
@@ -238,7 +281,7 @@ function initializeMap() {
       /*jslint forin: true */ //applies to the whole function, not just this block
       // the search request object
       request = {
-        query: locations[place]
+        query: locations[place].location
       };
 
       // Actually searches the Google Maps API for location data and runs the callback
@@ -251,7 +294,7 @@ function initializeMap() {
   // Sets the boundaries of the map based on pin locations
   window.mapBounds = new google.maps.LatLngBounds();
 
-  // locations is an array of location strings returned from locationFinder()
+  // locations is an array of location objects, with location string and reasons
   locations = locationFinder();
 
   // pinPoster(locations) creates pins on the map for each location in
