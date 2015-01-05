@@ -107,8 +107,6 @@ This is the fun part. Here's where we generate the custom Google Map for the web
 See the documentation below for more details.
 https://developers.google.com/maps/documentation/javascript/reference
 */
-var map;    // declares a global map variable
-
 
 /*
 Start here! initializeMap() is called when page is loaded.
@@ -123,9 +121,10 @@ function initializeMap() {
     disableDefaultUI: true
   };
 
-  // This next line makes `map` a new Google Map JavaScript Object and attaches it to
-  // <div id="map">, which is appended as part of an exercise late in the course.
-  map = new google.maps.Map(document.querySelector('#map'), mapOptions);
+  // This next line makes `resumeMap` a new Google Map JavaScript Object and
+  // attaches it to <div id="map">, which is appended as part of an exercise
+  // late in the course.
+  appData.resumeMap = new google.maps.Map(document.querySelector('#map'), mapOptions);
 
 
   /*
@@ -221,12 +220,12 @@ function initializeMap() {
     // The next lines save location data from the search result object to local variables
     lat = placeData.geometry.location.lat();  // latitude from the place service
     lon = placeData.geometry.location.lng();  // longitude from the place service
-    name = placeData.formatted_address;   // name of the place from the place service
-    bounds = window.mapBounds;            // current boundaries of the map window
+    name = placeData.formatted_address;       // name of the place from the place service
+    bounds = appData.resMapBounds;            // current boundaries of the map window
 
     // marker is an object with additional data about the pin for a single location
     marker = new google.maps.Marker({
-      map: map,
+      map: appData.resumeMap,
       position: placeData.geometry.location,
       title: name
     });
@@ -241,15 +240,19 @@ function initializeMap() {
     // hmmmm, I wonder what this is about...
     google.maps.event.addListener(marker, 'click', function () {
       // your code goes here!
+      // NOTE: infoWindow and marker are in the outer function (first level
+      //  closure) scope, so the 'right' objects will be directly available
+      //  to this anonymous event handler function
+      infoWindow.open(appData.resumeMap, marker);
     });
 
     // this is where the pin actually gets added to the map.
     // bounds.extend() takes in a map location object
     bounds.extend(new google.maps.LatLng(lat, lon));
     // fit the map to the new marker
-    map.fitBounds(bounds);
+    appData.resumeMap.fitBounds(bounds);
     // center the map
-    map.setCenter(bounds.getCenter());
+    appData.resumeMap.setCenter(bounds.getCenter());
   }
 
   /*
@@ -271,7 +274,7 @@ function initializeMap() {
 
     // creates a Google place search service object. PlacesService does the work of
     // actually searching for location data.
-    service = new google.maps.places.PlacesService(map);
+    service = new google.maps.places.PlacesService(appData.resumeMap);
 
     // Iterates through the array of locations, creates a search object for each location
     for (place in locations) {
@@ -289,7 +292,7 @@ function initializeMap() {
   }
 
   // Sets the boundaries of the map based on pin locations
-  window.mapBounds = new google.maps.LatLngBounds();
+  appData.resMapBounds = new google.maps.LatLngBounds();
 
   // locations is an array of location objects, with location string and reasons
   locations = locationFinder();
@@ -311,7 +314,6 @@ window.addEventListener('load', initializeMap);
 // and adjust map bounds
 window.addEventListener('resize', function () {//function (e)
   "use strict";
-  /*global mapBounds */
   // Make sure the map bounds get updated on page resize
-  map.fitBounds(mapBounds);
+  appData.resumeMap.fitBounds(appData.resMapBounds);
 });

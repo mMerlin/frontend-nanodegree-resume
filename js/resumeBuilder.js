@@ -1,7 +1,10 @@
 /*jslint browser: true, devel: true, indent: 4 */
 /*global $ */
-var appData = {};
-appData.placeholderText = '%data%'; //common replacement string
+var appData;
+if (appData === undefined) {
+    appData = {};
+}
+appData.DATA_PLACEHOLDER = '%data%'; //common replacement string
 
 
 //////////////////////////////////////////
@@ -240,7 +243,7 @@ appData.education = {
 appData.showSkill = function (singleSkill) {
     "use strict";
     /*global HTMLskills */
-    $('#skills').append(HTMLskills.replace(appData.placeholderText,
+    $('#skills').append(HTMLskills.replace(appData.DATA_PLACEHOLDER,
         singleSkill
         ));
 };//End appData.showSkill(skill)
@@ -268,7 +271,7 @@ appData.showAllSkills = function (bio) {
 appData.showBio = function (bio) {
     "use strict";
     /*global HTMLheaderName */
-    $('#header').prepend(HTMLheaderName.replace(appData.placeholderText,
+    $('#header').prepend(HTMLheaderName.replace(appData.DATA_PLACEHOLDER,
         bio.name || 'the unknown comic'
         ));
 };
@@ -292,21 +295,21 @@ appData.showAllJobs = function (work) {
         for (jobNum = 0; jobNum < work.jobs.length; jobNum += 1) {
             // Create (div) wrapper to hold details for single job
             $('#workExperience').append(HTMLworkStart);
-            fmtEmployer = HTMLworkEmployer.replace(appData.placeholderText,
+            fmtEmployer = HTMLworkEmployer.replace(appData.DATA_PLACEHOLDER,
                 work.jobs[jobNum].employer || 'no employer'
                 );
-            fmtTitle = HTMLworkTitle.replace(appData.placeholderText,
+            fmtTitle = HTMLworkTitle.replace(appData.DATA_PLACEHOLDER,
                 work.jobs[jobNum].title || 'no title'
                 );
             jobEle = $('.work-entry:last');//Only get wrapper element once
             jobEle.append(fmtEmployer + fmtTitle);
-            jobEle.append(HTMLworkLocation.replace(appData.placeholderText,
+            jobEle.append(HTMLworkLocation.replace(appData.DATA_PLACEHOLDER,
                 work.jobs[jobNum].location || 'no location'
                 ));
-            jobEle.append(HTMLworkDates.replace(appData.placeholderText,
+            jobEle.append(HTMLworkDates.replace(appData.DATA_PLACEHOLDER,
                 work.jobs[jobNum].dates || 'no dates'
                 ));
-            jobEle.append(HTMLworkDescription.replace(appData.placeholderText,
+            jobEle.append(HTMLworkDescription.replace(appData.DATA_PLACEHOLDER,
                 work.jobs[jobNum].description || 'no description'
                 ));
         }// ./for
@@ -364,17 +367,17 @@ appData.projects.addOneProject = function (projectObject) {
     var prjEle, img;
     $('#projects').append(HTMLprojectStart);
     prjEle = $('.project-entry:last');//The just added project wrapper element
-    prjEle.append(HTMLprojectTitle.replace(appData.placeholderText,
+    prjEle.append(HTMLprojectTitle.replace(appData.DATA_PLACEHOLDER,
         projectObject.title || 'no project title'
         ));
-    prjEle.append(HTMLprojectDates.replace(appData.placeholderText,
+    prjEle.append(HTMLprojectDates.replace(appData.DATA_PLACEHOLDER,
         projectObject.dates || 'no project dates'
         ));
-    prjEle.append(HTMLprojectDescription.replace(appData.placeholderText,
+    prjEle.append(HTMLprojectDescription.replace(appData.DATA_PLACEHOLDER,
         projectObject.description || 'no project description'
         ));
     for (img = 0; img < projectObject.images.length; img += 1) {
-        prjEle.append(HTMLprojectImage.replace(appData.placeholderText,
+        prjEle.append(HTMLprojectImage.replace(appData.DATA_PLACEHOLDER,
             projectObject.images[img]
             ));
     }
@@ -415,7 +418,7 @@ appData.showMap();
 //appData.resumeHTML = {};
 //ResumeHTML.headerName = '{stuff}%data%{stuff}';
 //var formatedResume = {};
-//formatedResume.Name = ResumeHTML.header.name.replace(placeholderText, me.name);
+//formatedResume.Name = ResumeHTML.header.name.replace(DATA_PLACEHOLDER, me.name);
 
 /*
     TODO:
