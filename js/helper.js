@@ -61,6 +61,25 @@ var internationalizeButton = '<button>Internationalize</button>';
 var googleMap = '<div id="map"></div>';
 
 
+// Get access to (access and extend) the data being stored by the main builder code
+var appData;
+if (appData === undefined) {
+  appData = {};
+}
+appData.masks = {};
+appData.masks.INFO_WRAPPER_START = '<div class="map-info">';
+appData.masks.INFO_WRAPPER_END = '</div>';
+// Currently simple pargraphs.
+// TODO: better might be to use unordered lists, at least of schools and jobs
+appData.masks.INFO_RESIDENCE = '<p>I %data%live here</p>';
+appData.masks.INFO_SCHOOLS_START = '<p class="school-locations">I attended';
+appData.masks.INFO_SCHOOLS_END = '</p>';
+appData.masks.INFO_SCHOOL_NAME = '<br>- %data%';
+appData.masks.INFO_JOBS_START = '<p class=job-locations>I worked at';
+appData.masks.INFO_JOBS_END = '</p>';
+appData.masks.INFO_JOB_EMPLOYER = '<br>- %data%';
+
+
 /*
 The International Name challenge in Lesson 2 where you'll create a function that will need this helper code to run. Don't delete! It hooks up your code to the button you'll be appending.
 */
@@ -77,10 +96,6 @@ $(document).ready(function () {
 /*
 The next few lines about clicks are for the Collecting Click Locations quiz in Lesson 2.
 */
-var appData;
-if (appData === undefined) {
-  appData = {};
-}
 appData.clickLocations = [];
 
 function logClicks(x, y) {
@@ -212,10 +227,13 @@ function initializeMap() {
   createMapMarker(placeData) reads Google Places search results to create map pins.
   placeData is the object returned from search results containing information
   about a single location.
+  It also creates an info windows overlay for the pin, containing information about
+  why the pin was added to the map.
   */
-  function createMapMarker(placeData) {
+  function createMapMarker(placeData, dataSource) {
     /*global google */
-    var lat, lon, name, bounds, marker, infoWindow;
+    var i, lat, lon, name, bounds, marker, infoWindow, infoContent,
+      reasonCount, foundReason, variantText;
 
     // The next lines save location data from the search result object to local variables
     lat = placeData.geometry.location.lat();  // latitude from the place service
@@ -230,11 +248,88 @@ function initializeMap() {
       title: name
     });
 
+    function addInfoSet(setOptions) {
+      var j, foundFirst;
+      foundFirst = false;//First of current set
+      //Loop through all reasons linked to locaiton
+      for (j = 0; j < reasonCount; j += 1) {
+        if (dataSource.reasons[j].source === setOptions.setGroup) {
+          if (!foundFirst) {
+            infoContent += setOptions.setPrefix;
+            foundReason = true;//in closure
+            foundFirst = true;
+          }
+          infoContent += setOptions.setInstance.replace(
+            appData.DATA_PLACEHOLDER,
+            setOptions.sourceData[setOptions.setGroup][
+              dataSource.reasons[j].occurrence
+            ][setOptions.instanceProperty]
+          );
+        } // ./(dataSource.reasons[i].source === setOptions.setGroup)
+      }// ./for loop
+      if (foundFirst) {
+        infoContent += setOptions.setSuffix;
+      }
+    }// ./addInfoSet()
+
+    // Build content for the info window based on the reason(s) the location
+    // for the map marker was included in the search.
+    infoContent = name;
+    foundReason = false;
+    reasonCount = dataSource.reasons.length || 0;
+    if (reasonCount > 0) {
+      infoContent = appData.masks.INFO_WRAPPER_START;
+      //With the current processing logic, there should ever only be one
+      //contacts entry, and it will be the first entry, if it exists at all.
+      //Do not rely on that.  Iterate over the array, looking for a contacts
+      //entry with an occurrence of either 0 or undefined.
+      for (i = 0; i < reasonCount; i += 1) {
+        if (dataSource.reasons[i].source === 'contacts') {
+          foundReason = true;
+          variantText = '';
+          if (dataSource.reasons[i].occurrence !== undefined &&
+              dataSource.reasons[i].occurrence !== 0) {
+            variantText = 'used to ';
+          }
+          infoContent = appData.masks.INFO_RESIDENCE.replace(
+            appData.DATA_PLACEHOLDER,
+            variantText
+          );
+          i = reasonCount;//abort the rest of the loop
+        }
+      }
+
+      //Look for school reasons
+      addInfoSet({
+        'setGroup' : 'schools',
+        'setPrefix' : appData.masks.INFO_SCHOOLS_START,
+        'setSuffix' : appData.masks.INFO_SCHOOLS_END,
+        'setInstance' : appData.masks.INFO_SCHOOL_NAME,
+        'instanceProperty' : 'name',
+        'sourceData' : appData.education
+      });
+
+      //Look for job reasons
+      addInfoSet({
+        'setGroup' : 'jobs',
+        'setPrefix' : appData.masks.INFO_JOBS_START,
+        'setSuffix' : appData.masks.INFO_JOBS_END,
+        'setInstance' : appData.masks.INFO_JOB_EMPLOYER,
+        'instanceProperty' : 'employer',
+        'sourceData' : appData.work
+      });
+
+      if (!foundReason) {
+        infoContent = "no known reasons found";
+      }
+      infoContent += appData.masks.INFO_WRAPPER_END;
+    }// ./(reasonCount > 0)
+
     // infoWindows are the little helper windows that open when you click
     // or hover over a pin on a map. They usually contain more information
     // about a location.
     infoWindow = new google.maps.InfoWindow({
-      content: name
+      content: infoContent
     });
 
     // hmmmm, I wonder what this is about...
@@ -256,21 +351,30 @@ function initializeMap() {
   }
 
   /*
-  callback(results, status) makes sure the search returned results for a location.
-  If so, it creates a new map marker for that location.
-  */
-  function callback(results, status) {
-    if (status === google.maps.places.PlacesServiceStatus.OK) {
-      createMapMarker(results[0]);
-    }
-  }
-
-  /*
   pinPoster(locations) takes in the array of locations created by locationFinder()
   and fires off Google place searches for each location
   */
   function pinPoster(locations) {
     var service, place, request;
+
+    //Create a closure, so that the callback has information about the contxt
+    function searchWrapper(source) {
+      var requestSource = source;
+      /*
+      callback(results, status) makes sure the search returned results for a
+      location.  If so, it creates a new map marker for that location.
+      */
+      function callback(results, status) {
+        if (status === google.maps.places.PlacesServiceStatus.OK) {
+          createMapMarker(results[0], requestSource);
+        }
+      }
+
+      // Actually searches the Google Maps API for location data and runs the callback
+      // function with the search results after each search.
+      // Very easy to overload with too many locations
+      service.textSearch(request, callback);
+    }
 
     // creates a Google place search service object. PlacesService does the work of
     // actually searching for location data.
@@ -284,10 +388,7 @@ function initializeMap() {
         query: locations[place].location
       };
 
-      // Actually searches the Google Maps API for location data and runs the callback
-      // function with the search results after each search.
-      // Very easy to overload with too many locations
-      service.textSearch(request, callback);
+      searchWrapper(locations[place]);
     }
   }
 
