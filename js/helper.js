@@ -291,7 +291,7 @@ function initializeMap() {
               dataSource.reasons[i].occurrence !== 0) {
             variantText = 'used to ';
           }
-          infoContent = appData.masks.INFO_RESIDENCE.replace(
+          infoContent += appData.masks.INFO_RESIDENCE.replace(
             appData.DATA_PLACEHOLDER,
             variantText
           );
