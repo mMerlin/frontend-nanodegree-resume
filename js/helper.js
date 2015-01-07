@@ -1,10 +1,14 @@
-/*jslint browser: true, devel: true, indent: 2 */
+/*jslint browser: true, devel: true, indent: 2, maxlen: 150 */
 /*global $, inName, appData */
 /*
 
-This file contains all of the code running in the background that makes resumeBuilder.js possible. We call these helper functions because they support your code in this course.
+This file contains all of the code running in the background that makes
+resumeBuilder.js possible. We call these helper functions because they support
+your code in this course.
 
-Don't worry, you'll learn what's going on in this file throughout the course. You won't need to make any changes to it until you start experimenting with inserting a Google Map in Problem Set 3.
+Don't worry, you'll learn what's going on in this file throughout the course.
+You won't need to make any changes to it until you start experimenting with
+inserting a Google Map in Problem Set 3.
 
 Cameron Pittman
 */
@@ -81,10 +85,12 @@ appData.masks.INFO_JOB_EMPLOYER = '<br>- %data%';
 
 
 /*
-The International Name challenge in Lesson 2 where you'll create a function that will need this helper code to run. Don't delete! It hooks up your code to the button you'll be appending.
+The International Name challenge in Lesson 2 where you'll create a function
+that will need this helper code to run. Don't delete! It hooks up your code to
+the button you'll be appending.
 */
 $(document).ready(function () {
-  "use strict";
+  'use strict';
   $('button').click(function () {
     var name, iName;
     name = $('#name')[0].innerText;
@@ -99,7 +105,7 @@ The next few lines about clicks are for the Collecting Click Locations quiz in L
 appData.clickLocations = [];
 
 function logClicks(x, y) {
-  "use strict";
+  'use strict';
   appData.clickLocations.push(
     {
       x: x,
@@ -110,7 +116,7 @@ function logClicks(x, y) {
 }
 
 $(document).click(function (loc) {
-  "use strict";
+  'use strict';
   //Pass the click coordinates, relative to the document, to the logging function
   logClicks(loc.pageX, loc.pageY);
 });
@@ -127,7 +133,7 @@ https://developers.google.com/maps/documentation/javascript/reference
 Start here! initializeMap() is called when page is loaded.
 */
 function initializeMap() {
-  "use strict";
+  'use strict';
   /*global google */
 
   var locations, mapOptions;
@@ -414,7 +420,7 @@ window.addEventListener('load', initializeMap);
 // Vanilla JS way to listen for resizing of the window
 // and adjust map bounds
 window.addEventListener('resize', function () {//function (e)
-  "use strict";
+  'use strict';
   // Make sure the map bounds get updated on page resize
   appData.resumeMap.fitBounds(appData.resMapBounds);
 });
