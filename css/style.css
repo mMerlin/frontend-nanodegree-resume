@@ -218,7 +218,7 @@ span {
   }
 }
 
-.map-info {
+.mapInfo {
   background-color: #aaa;
   font-size: small;
   line-height: 1.1em;
@@ -226,13 +226,13 @@ span {
   padding: 0.5em 0 0.5em 0.5em;
 }
 
-.map-info p {
+.mapInfo p {
   font-size: inherit;
   line-height: inherit;
   margin-top: 0.5em;
   width: 100%;
 }
 
-.map-info p:first-child {
+.mapInfo p:first-child {
   margin-top: 0;
 }
