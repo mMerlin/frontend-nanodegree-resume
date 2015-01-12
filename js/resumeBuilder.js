@@ -9,7 +9,6 @@ appData.CONST.DATA_PLACEHOLDER = '%data%'; //common replacement string
 appData.CONST.ROW_HIDE = 'rowHide'; //css class; hide rows when paging
 appData.CONST.WAKE_CONTROL = 'awake'; //css class; show controls as awake (hover)
 appData.CONST.SLEEP_CONTROL = 'sleep'; //css class; hide unavailable controls
-appData.DATA_PLACEHOLDER = '%data%'; //common replacement string
 
 /**
  * Wrapper to load the résumé data using JSON structures
@@ -291,18 +290,18 @@ appData.bio.display = function (bio) {
     /*global HTMLheaderRole, HTMLheaderName, HTMLmobile, HTMLemail,
         HTMLgithub, HTMLtwitter, HTMLblog, HTMLlocation, HTMLbioPic,
         HTMLWelcomeMsg, HTMLskillsStart */
-    var formattedHtml;//[also] used in inner closure scope
-
+    var formattedHtml, PLC_HLD;//[also] used in inner closure scope
+    PLC_HLD = appData.CONST.DATA_PLACEHOLDER;
     if (!$.isPlainObject(bio)) {
         //Major problem. This is not going to work, no practical runtime recovery
         return false;
     }
 
-    formattedHtml = HTMLheaderRole.replace(appData.DATA_PLACEHOLDER,
+    formattedHtml = HTMLheaderRole.replace(PLC_HLD,
         bio.role || 'no role specified'
         );
     $('#header').prepend(formattedHtml);
-    formattedHtml = HTMLheaderName.replace(appData.DATA_PLACEHOLDER,
+    formattedHtml = HTMLheaderName.replace(PLC_HLD,
         bio.name || 'the unknown comic'
         );
     $('#header').prepend(formattedHtml);
@@ -310,7 +309,7 @@ appData.bio.display = function (bio) {
     //Individual contact details are optional: only insert when they exist
     function showContact(template, dataSource) {
         if (bio.contacts[dataSource]) {
-            formattedHtml = template.replace(appData.DATA_PLACEHOLDER,
+            formattedHtml = template.replace(PLC_HLD,
                 bio.contacts[dataSource]
                 );
             $('#topContacts').append(formattedHtml);
@@ -333,11 +332,11 @@ appData.bio.display = function (bio) {
     showContact(HTMLblog, 'blog');
     showContact(HTMLlocation, 'location');
 
-    formattedHtml = HTMLbioPic.replace(appData.DATA_PLACEHOLDER,
+    formattedHtml = HTMLbioPic.replace(PLC_HLD,
         bio.biopic || 'http://placehold.it/100x100'
         );
     $('#header').append(formattedHtml);
-    formattedHtml = HTMLWelcomeMsg.replace(appData.DATA_PLACEHOLDER,
+    formattedHtml = HTMLWelcomeMsg.replace(PLC_HLD,
         bio.welcomeMessage || 'welcome not specified'
         );
     $('#header').append(formattedHtml);
@@ -349,7 +348,7 @@ appData.bio.display = function (bio) {
      */
     function showSkill(singleSkill) {
         /*global HTMLskills */
-        formattedHtml = HTMLskills.replace(appData.DATA_PLACEHOLDER,
+        formattedHtml = HTMLskills.replace(PLC_HLD,
             singleSkill
             );
         $('#skills').append(formattedHtml);
@@ -374,8 +373,8 @@ appData.work.display = function (work) {
     'use strict';
     /*global HTMLworkStart, HTMLworkEmployer, HTMLworkTitle, HTMLworkLocation,
         HTMLworkDates, HTMLworkDescription */
-    var jobNum, jobEle, fmtEmployer, formattedHtml;
-
+    var jobNum, jobEle, fmtEmployer, formattedHtml, PLC_HLD;
+    PLC_HLD = appData.CONST.DATA_PLACEHOLDER;
 
     if (!($.isPlainObject(work) && $.isArray(work.jobs))) {
         //Major problem. This is not going to work, no practical runtime recovery
@@ -383,29 +382,30 @@ appData.work.display = function (work) {
     }
 
     for (jobNum = 0; jobNum < work.jobs.length; jobNum += 1) {
+
         // Create (div) wrapper to hold details for single job
         $('#workExperience').append(HTMLworkStart);
 
-        fmtEmployer = HTMLworkEmployer.replace(appData.DATA_PLACEHOLDER,
+        fmtEmployer = HTMLworkEmployer.replace(PLC_HLD,
             work.jobs[jobNum].employer || 'no employer'
             );
-        formattedHtml = HTMLworkTitle.replace(appData.DATA_PLACEHOLDER,
+        formattedHtml = HTMLworkTitle.replace(PLC_HLD,
             work.jobs[jobNum].title || 'no title'
             );
         jobEle = $('.work-entry:last');//Only get wrapper element once
         jobEle.append(fmtEmployer + formattedHtml);
 
-        formattedHtml = HTMLworkLocation.replace(appData.DATA_PLACEHOLDER,
+        formattedHtml = HTMLworkLocation.replace(PLC_HLD,
             work.jobs[jobNum].location || 'no location'
             );
         jobEle.append(formattedHtml);
 
-        formattedHtml = HTMLworkDates.replace(appData.DATA_PLACEHOLDER,
+        formattedHtml = HTMLworkDates.replace(PLC_HLD,
             work.jobs[jobNum].dates || 'no dates'
             );
         jobEle.append(formattedHtml);
 
-        formattedHtml = HTMLworkDescription.replace(appData.DATA_PLACEHOLDER,
+        formattedHtml = HTMLworkDescription.replace(PLC_HLD,
             work.jobs[jobNum].description || 'no description'
             );
         jobEle.append(formattedHtml);
@@ -427,6 +427,9 @@ appData.work.display = function (work) {
  */
 appData.projects.display = function (projects) {
     'use strict';
+    var PLC_HLD;
+    PLC_HLD = appData.CONST.DATA_PLACEHOLDER;//for nested functions
+
     if (!($.isPlainObject(projects) && $.isArray(projects.projects))) {
         //Major problem. This is not going to work, no practical runtime recovery
         return false;
@@ -445,23 +448,23 @@ appData.projects.display = function (projects) {
         $('#projects').append(HTMLprojectStart);
         prjEle = $('.project-entry:last');//The just added project wrapper element
 
-        formattedHtml = HTMLprojectTitle.replace(appData.DATA_PLACEHOLDER,
+        formattedHtml = HTMLprojectTitle.replace(PLC_HLD,
             projectObject.title || 'no project title'
             );
         prjEle.append(formattedHtml);
 
-        formattedHtml = HTMLprojectDates.replace(appData.DATA_PLACEHOLDER,
+        formattedHtml = HTMLprojectDates.replace(PLC_HLD,
             projectObject.dates || 'no project dates'
             );
         prjEle.append(formattedHtml);
 
-        formattedHtml = HTMLprojectDescription.replace(appData.DATA_PLACEHOLDER,
+        formattedHtml = HTMLprojectDescription.replace(PLC_HLD,
             projectObject.description || 'no project description'
             );
         prjEle.append(formattedHtml);
 
         for (img = 0; img < projectObject.images.length; img += 1) {
-            formattedHtml = HTMLprojectImage.replace(appData.DATA_PLACEHOLDER,
+            formattedHtml = HTMLprojectImage.replace(PLC_HLD,
                 projectObject.images[img]
                 );
             prjEle.append(formattedHtml);
@@ -482,7 +485,9 @@ appData.projects.display = function (projects) {
  */
 appData.education.display = function (education) {
     'use strict';
-    var formattedHtml;
+    var formattedHtml, PLC_HLD;//(also) for nested functions
+    PLC_HLD = appData.CONST.DATA_PLACEHOLDER;//for nested functions
+
     if (!($.isPlainObject(education) && $.isArray(education.schools))) {
         //Major problem. This is not going to work, no practical runtime recovery
         return false;
@@ -500,29 +505,29 @@ appData.education.display = function (education) {
         $('#education').append(HTMLschoolStart);
         eduEle = $('.education-entry').last();//The just added wrapper element
 
-        formattedHtml = HTMLschoolName.replace(appData.DATA_PLACEHOLDER,
+        formattedHtml = HTMLschoolName.replace(PLC_HLD,
             schoolObject.name || 'no school name'
             );
         eduEle.append(formattedHtml);
 
-        formattedHtml = HTMLschoolLocation.replace(appData.DATA_PLACEHOLDER,
+        formattedHtml = HTMLschoolLocation.replace(PLC_HLD,
             schoolObject.location || 'no school location'
             );
         eduEle.append(formattedHtml);
 
-        formattedHtml = HTMLschoolDates.replace(appData.DATA_PLACEHOLDER,
+        formattedHtml = HTMLschoolDates.replace(PLC_HLD,
             schoolObject.dates || 'no dates'
             );
         eduEle.append(formattedHtml);
 
-        formattedHtml = HTMLschoolDegree.replace(appData.DATA_PLACEHOLDER,
+        formattedHtml = HTMLschoolDegree.replace(PLC_HLD,
             schoolObject.degree || 'no degree specified'
             );
         eduEle.append(formattedHtml);
 
         if ($.isArray(schoolObject.majors)) {
             for (mjr = 0; mjr < schoolObject.majors.length; mjr += 1) {
-                formattedHtml = HTMLschoolMajor.replace(appData.DATA_PLACEHOLDER,
+                formattedHtml = HTMLschoolMajor.replace(PLC_HLD,
                     schoolObject.majors[mjr]
                     );
                 eduEle.append(formattedHtml);

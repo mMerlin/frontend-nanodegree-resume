@@ -71,7 +71,7 @@ if (appData === undefined) {
   appData = {};
 }
 appData.masks = {};
-appData.masks.INFO_WRAPPER_START = '<div class="map-info">';
+appData.masks.INFO_WRAPPER_START = '<div class="mapInfo">';
 appData.masks.INFO_WRAPPER_END = '</div>';
 // Currently simple pargraphs.
 // TODO: better might be to use unordered lists, at least of schools and jobs

@@ -48,54 +48,50 @@
 
   <script src="js/resumeBuilder.js"></script>
 
-  <!--
-  Provided (and tweaked) script to adjust the display of any unpopulated
-  sections of the skeleton.
-  No jQuery here.  This backstops potential failure modes, like failing to load
-  the jQuery library.  Use only absolute basic functionality.
-  -->
   <script type="text/javascript">
-/*jslint browser: true, indent: 2, maxlen: 82 */
-var appData;
-(function () {
-  'use strict';
-  if (appData === undefined) {
-    appData = {};
-  } else {
-    if (typeof appData !== 'object') {
-      alert('AppData is already declared as type ' + (typeof appData));
-      return;
-    }
-  }
+    /*jslint browser: true, indent: 2, maxlen: 82 */
+    /**
+     * Provided (and tweaked) code to adjust the display properties for any
+     * skeleton sections that did not get populated.
+     *
+     * Anonymous, self-executing, wrapper function, to keep everything done here
+     * out of the global namespace
+     *
+     * No jQuery here.  This backstops potential failure modes, like failing to
+     * load the jQuery library.  Use only absolute basic functionality.
+     *
+     * @return {undefined}
+     */
+    (function () {
+      'use strict';
 
-  //function to DRY the logic to tweak the display of an empty section
-  appData.showAsEmpty = function (rootId) {
-    document.getElementById(rootId).className = 'emptyBlock';
-  };
+      //function to DRY the logic to tweak the display of an empty section
+      function showAsEmpty(rootId) {
+        document.getElementById(rootId).className = 'emptyBlock';
+      }
 
-  if (document.getElementsByClassName('flex-item').length === 0) {
-    appData.showAsEmpty('topContacts');
-  }
-  if (document.getElementsByTagName('h1').length === 0) {
-    appData.showAsEmpty('header');
-  }
-  if (document.getElementsByClassName('work-entry').length === 0) {
-    appData.showAsEmpty('workExperience');
-  }
-  if (document.getElementsByClassName('project-entry').length === 0) {
-    appData.showAsEmpty('projects');
-  }
-  if (document.getElementsByClassName('education-entry').length === 0) {
-    appData.showAsEmpty('education');
-  }
-  if (document.getElementsByClassName('flex-item').length === 0) {
-    appData.showAsEmpty('letsConnect');
-  }
-  if (document.getElementById('map') === null) {
-    appData.showAsEmpty('mapDiv');
-  }
-
-}());
+      if (document.getElementsByClassName('flex-item').length === 0) {
+        showAsEmpty('topContacts');
+      }
+      if (document.getElementsByTagName('h1').length === 0) {
+        showAsEmpty('header');
+      }
+      if (document.getElementsByClassName('work-entry').length === 0) {
+        showAsEmpty('workExperience');
+      }
+      if (document.getElementsByClassName('project-entry').length === 0) {
+        showAsEmpty('projects');
+      }
+      if (document.getElementsByClassName('education-entry').length === 0) {
+        showAsEmpty('education');
+      }
+      if (document.getElementsByClassName('flex-item').length === 0) {
+        showAsEmpty('letsConnect');
+      }
+      if (document.getElementById('map') === null) {
+        showAsEmpty('mapDiv');
+      }
+    }());
   </script>
 </body>
 </html>
