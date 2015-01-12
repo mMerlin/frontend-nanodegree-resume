@@ -4,6 +4,11 @@ var appData;
 if (appData === undefined) {
     appData = {};
 }
+appData.CONST = {};
+appData.CONST.DATA_PLACEHOLDER = '%data%'; //common replacement string
+appData.CONST.ROW_HIDE = 'rowHide'; //css class; hide rows when paging
+appData.CONST.WAKE_CONTROL = 'awake'; //css class; show controls as awake (hover)
+appData.CONST.SLEEP_CONTROL = 'sleep'; //css class; hide unavailable controls
 appData.DATA_PLACEHOLDER = '%data%'; //common replacement string
 
 /**
@@ -113,7 +118,7 @@ appData.initialize = function () {
                 "location" :    "Calgary, AB, Canada",
                 "dates" :       "1997 - 2001",
                 "description" :
-                    "Business appliction Y2K conversion and support"
+                    "Business application Y2K conversion and support"
             },
             {
                 "employer" :    "TransAlta Utilities",
@@ -171,7 +176,12 @@ appData.initialize = function () {
                 "description" :
                     "Operation of cheque sorter equipment at bank data centre"
             }
-        ]
+        ],
+        "config" : {
+            "rowSelector" : '.work-entry',
+            "overflow" : 6,
+            "pageLimit" : 5
+        }
     };// ./appData.work
 
 
@@ -247,9 +257,23 @@ appData.initialize = function () {
             }
         ]
     };// ./appData.education
+
+
+    /**
+     * Create and populate an object containing template information, for
+     * extension to the base project
+     *
+     * @type {Object}
+     */
+    appData.TEMPLATES = {
+        "BLK_CONTROLS" : "<section class=\"controls sleep\"></section>",
+        "ARO_BUTTON" : "<div class=\"aroCtl\"><div class=\"target\"></div><div class=\"inner\"></div></div>",
+        "PAGE_UP" : "<div class=\"aroCtl arrow pageUp\"></div>",
+        "PAGE_DOWN" : "<div class=\"aroCtl arrow pageDown\"></div>"
+    };// ./appData.TEMPLATES
 };// ./appData.initialize()
 
-//Load the résumé data into appliction storage
+//Load the résumé data into application storage
 appData.initialize();
 
 
@@ -291,7 +315,7 @@ appData.bio.display = function (bio) {
                 );
             $('#topContacts').append(formattedHtml);
         }
-    }// ./showContact
+    }// ./showContact(template, dataSource)
 
     //Show contacts that do not have a preformatted template
     function showGenericContact(contactType, dataSource) {
@@ -299,7 +323,7 @@ appData.bio.display = function (bio) {
         var partialTemplate;
         partialTemplate = HTMLcontactGeneric.replace('%contact%', contactType);
         showContact(partialTemplate, dataSource);
-    }// ./showGenericContact
+    }// ./showGenericContact(contactType, dataSource)
 
     showContact(HTMLmobile, 'mobile');
     showContact(HTMLemail, 'email');
@@ -329,7 +353,7 @@ appData.bio.display = function (bio) {
             singleSkill
             );
         $('#skills').append(formattedHtml);
-    }// ./showSkill(skill)
+    }// ./showSkill(singleSkill)
 
     // Add the skills summary to the header: only when skills exist
     if ($.isArray(bio.skills) && bio.skills.length > 0) {
@@ -386,8 +410,14 @@ appData.work.display = function (work) {
             );
         jobEle.append(formattedHtml);
     }// ./for
-};// ./appData.work.display(work)
 
+    if ($.isPlainObject(work.config)) {
+        // The JSON data includes some exta display configration information.
+        // Provide some extra supporting user controls
+        work.config.build = appData.controls.buildPageable;
+        appData.controls.addBlockControls('#workExperience', work.config);
+    }
+};// ./appData.work.display(work)
 
 /**
  * Add the project information to the web page
@@ -438,7 +468,7 @@ appData.projects.display = function (projects) {
             // TODO: Add generic alt attribute for each image based on proj title
             // and img (sequence number)
         }
-    }
+    }// ./addOneProject(projectObject)
 
     projects.projects.forEach(addOneProject);
 };// ./appData.projects.display(projects)
@@ -498,7 +528,7 @@ appData.education.display = function (education) {
                 eduEle.append(formattedHtml);
             }// ./for
         }// ./($.isArray(schoolObject.majors))
-    }
+    }// ./addOneSchool(schoolObject)
 
     education.schools.forEach(addOneSchool);
 };// ./appData.education.display(education)
@@ -516,6 +546,9 @@ appData.education.display = function (education) {
  *                             spaces.
  * @return {string}            Internationlized full name; surname uppercase,
  *                             with the rest leading caps only.
+ *
+ * Currently needs to be a global level function, to work with the provided
+ * helper.js code
  */
 function inName(localNames) {
     'use strict';
@@ -537,13 +570,7 @@ function inName(localNames) {
 
     inNames = nameParts.join(" ");
     return inNames;
-}
-
-appData.showInternationalize = function () {
-    'use strict';
-    /*global internationalizeButton */
-    $('#main').append(internationalizeButton);
-};
+}// ./inName(localNames)
 
 /**
  * Build the map to show on the page
@@ -555,12 +582,234 @@ appData.showMap = function () {
     $('#mapDiv').append(googleMap);
 };
 
+appData.app = {};
+/**
+ * Encapsulate the creation of (function) resources for the application
+ * @param  {Object} root The base object for the application
+ * @return {undefined}
+ */
+appData.app.build = function (root) {
+    'use strict';
+    var ctl;
+
+    // Common functions to support controls
+    root.controls = {};
+    ctl = root.controls;
+
+    // Create a place to store the global configuration information.  This is
+    // (to be) managed by the page level configuration tool, and accessed by
+    // (at least) the control block reset functions.
+    ctl.configuration = {};
+
+    // Track the created control blocks, so that they can be found again?
+    // just use a .controls selector?
+    ctl.controlBlocks = [];
+
+    /**
+     * Add control to change page to internationalized content
+     * @return {undefined}
+     */
+    ctl.showInternationalize = function () {
+        /*global internationalizeButton */
+        $('#main').append(internationalizeButton);
+    };// ./showInternationalize = function ()
+
+    /**
+     * configure a pageable section block of controls to their starting state
+     * @param  {jQuery Selector} controlRoot wrapper for the block of controls
+     * @return {undefined}
+     */
+    ctl.resetBlock = function (controlRoot) {
+        var controlEle, rowSelector, rowEles, totalRows, blockConfig,
+            blockOverflow, blockPageLimit;
+        controlEle = $(controlRoot);// control block wrapper
+        // get block configuration settings, or default to an empty objectd
+        blockConfig = controlEle.data().config || {};
+        if (typeof blockConfig.rowSelector === 'string') {
+            // A (potentially) pageable block
+            rowSelector = blockConfig.rowSelector; //tag for line/row in 'page'
+            rowEles = controlEle.parent().children(rowSelector);//populated rows
+            totalRows = rowEles.length;
+
+            // Get or set default for full page length (no next page), and row
+            // limit when there are more pages.
+            blockOverflow = blockConfig.overflow || totalRows;
+            blockPageLimit = blockConfig.pageLimit || blockOverflow;
+            if (totalRows > blockOverflow) {
+                //Setup to show only the first page worth of rows
+                rowEles.slice(0, blockPageLimit)
+                    .removeClass(appData.CONST.ROW_HIDE);
+                rowEles.slice(blockPageLimit)
+                    .addClass(appData.CONST.ROW_HIDE);
+            } else {
+                //Few enough rows to display them all to start
+                rowEles.removeClass(appData.CONST.ROW_HIDE);
+            }
+        }
+        // reset the control states too
+        // Hide everything except the activation symbol / marker / icon
+        controlEle.children().slice(1).addClass(appData.CONST.SLEEP_CONTROL);
+        controlEle.children().first().removeClass(appData.CONST.SLEEP_CONTROL);
+        // The wrapper is created 'sleeping' to avoid some flicker, so need to
+        // wake it up (at least) the first time
+        controlEle.removeClass(appData.CONST.SLEEP_CONTROL);
+    };// ./resetBlock(controlRoot)
+
+    /**
+     * [addBlockControls description]
+     * @param {selector} parentEle   jQuery Selector for root element of block
+     *                               to add controls to
+     * @param {object}   options     configuration information for the controls
+     *                               of the block
+     * @return {undefined}
+     */
+    ctl.addBlockControls = function (parentEle, options) {
+        var baseEle, controlEle;
+        // Insert the generic control wrapper as the first child of the parent
+        baseEle = $(parentEle).prepend(appData.TEMPLATES.BLK_CONTROLS);
+        controlEle = baseEle.children().first();// The just added wrapper
+        controlEle.append(appData.TEMPLATES.ARO_BUTTON);
+        controlEle.data('config', options);
+
+        //build option has not been specified yet
+        options.build(controlEle);
+
+        // TODO: try create control block before add to page
+        // baseEle = $(appData.TEMPLATES.BLK_CONTROLS);
+        // controlEle = baseEle.children().first();// The just added wrapper
+        // controlEle.append(appData.TEMPLATES.ARO_BUTTON);
+        // controlEle.data('config', options);
+        // options.build(controlEle);
+        // $(parentEle).prepend(baseEle);//The wrapper all filled in
+    };// ./addBlockControls(parentEle, options)
+
+    /**
+     * Create a 'standard' set of controls to handle paging of block contents
+     * @param  {[type]} controlBlockWrapper [description]
+     * @param  {[type]} options             [description]
+     * @return {undefined}
+     *
+     *  ../../Resume Controls.mm
+     */
+    ctl.buildPageable = function (controlBlockWrapper) {
+        var parentEle = $(controlBlockWrapper);
+        /////////////////////////////////////
+        //Individual (css) button controls //
+        /////////////////////////////////////
+
+        parentEle.append(appData.TEMPLATES.PAGE_UP);
+        parentEle.append(appData.TEMPLATES.PAGE_DOWN);
+        //.FULL_PAGE
+        //.TOP_OF_PAGE
+        //.END_OF_PAGE
+        //.MORE_ROWS
+        //.LESS_ROWS
+        //.RESET_PAGE
+        //.MORE_DETAILS
+        //.LESS_DETAILS
+        //.MM
+    };// ./buildPageable(controlBlockWrapper)
+};
+
+/**
+ * bind the handlers needed for interactive functionality
+ * @param  {[type]} root [description]
+ * @return {undefined}
+ */
+appData.app.initialize = function (root) {
+    'use strict';
+    var ctl = root.controls;
+
+    /**
+     * Show the defined menu when a control button is clicked
+     * @return {undefined}
+     */
+    ctl.baseClick = function (e) {
+        console.log('baseClick');
+        console.log($(this).data().config.rowSelector);
+        console.log(e.handleObj.namespace);
+        console.log($.isPlainObject(e));
+        /*
+            MouseEvent
+            click
+            currentTarget:
+                wrong target: currently the wrapper for the controls block
+                this 'works' because all of the other controls are hidden
+            delegateTarget: div#main
+            handleObj
+                namespace
+                selector
+                type
+            originalEvent: browser native event object
+                dataTransfer: for drag and drop?
+            relatedTarget: null ?toElement|fromElement for mouseout|mouseover
+            target: the child? for current target the first saw the event?
+            timeStamp
+            toElement: the element the mouse moved to (mouseout)
+            view
+            modifier keys
+                altKey
+                ctrlKey
+                metaKey
+                shiftKey
+            mouse coordinates
+                clientX: relative to browser left edge (os border?)
+                clientY
+                offsetX: within currentTarget
+                offsetY
+                pageX: relative to scrollable top of page
+                pageY
+                screenX: OS viewport?
+                screenY
+        */
+    };// ./baseClick(e)
+
+    //Setup event delegate handlers for the interactive controls
+    $('#main').on('mouseenter', '.controls', function () {
+        console.log('mouseenter controls');
+        console.log($(this).data());
+        $(this).addClass(appData.CONST.WAKE_CONTROL);
+    });
+    $('#main').on('mouseleave', '.controls', function () {
+        $(this).removeClass(appData.CONST.WAKE_CONTROL);
+    });
+    // $('#main').on('click.aro', '.controls', ctl.baseClick);
+    // fail $('.controls').on('click.aro', 'div', ctl.baseClick);
+    // fail $('.controls').on('click.aro', '.controls > div', ctl.baseClick);
+    // fail? $('.controls').on('click.aro', '.aroCtl', ctl.baseClick);
+    $('.controls').on('click.aro', ctl.baseClick);
+    // TODO: add handler to activate the controls
+    //      hover: show expanded controls
+    //      click: open / lock controls
+    //   show all
+    //   reset
+    //   close
+    //   hide all
+    //   page up | down
+    //   more
+    //   less
+    // ? could add full set of controls to start, and just hide with css?
+    // ../../Resume Controls.mm
+
+    //Let css position the sub controls?
+    //Use js and position relative to base?
+    // TODO: trigger reset action/event instead of direct function call?
+    $.each($('.controls'), function (idx, controlEle) {
+        ctl.resetBlock(controlEle, idx);// idx ignored; jslint pacifier
+    });
+    ctl.showInternationalize();
+
+    //show all of the hidden application sections as one batch
+    $('#main > div').removeClass(appData.CONST.SLEEP_CONTROL);
+};// ./app.initialize(root)
+
+appData.app.build(appData);// Create common resources needed by display functions
 appData.bio.display(appData.bio);
 appData.work.display(appData.work);
 appData.projects.display(appData.projects);
 appData.education.display(appData.education);
-//appData.showInternationalize();
 appData.showMap();
+appData.app.initialize(appData);//Setup the dynamic features
 
 //appData.resumeHTML = {};
 //ResumeHTML.headerName = '{stuff}%data%{stuff}';
@@ -576,4 +825,6 @@ appData.showMap();
             - aro: hide, more, less, reset
         - same for skills
         - hover popups for detail expansion
+        - replace (some) template strings with html5 template tag
+            - add wrapper and/or class and css for IE support
  */

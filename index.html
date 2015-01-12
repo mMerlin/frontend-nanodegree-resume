@@ -27,16 +27,16 @@
       <ul id="topContacts" class='flex-box'></ul>
     </div>
     <div style='clear: both;'></div>
-    <div id="workExperience" class='gray'>
+    <div id="workExperience" class='sleep gray'>
       <h2>Work Experience</h2>
     </div>
-    <div id="projects">
+    <div id="projects" class='sleep'>
       <h2>Projects</h2>
     </div>
-    <div id="education" class='gray'>
+    <div id="education" class='sleep gray'>
       <h2>Education</h2>
     </div>
-    <div id="mapDiv">
+    <div id="mapDiv" class='sleep'>
       <h2>Where I've Lived and Worked</h2>
     </div>
     <div id="letsConnect" class='dark-gray'>
@@ -70,7 +70,7 @@ var appData;
 
   //function to DRY the logic to tweak the display of an empty section
   appData.showAsEmpty = function (rootId) {
-    document.getElementById(rootId).style.backgroundColor = 'black';
+    document.getElementById(rootId).className = 'emptyBlock';
   };
 
   if (document.getElementsByClassName('flex-item').length === 0) {
