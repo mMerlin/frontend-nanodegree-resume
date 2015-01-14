@@ -268,7 +268,6 @@ span {
 
 .controls {
   position: absolute;
-  opacity: 0.2;
   color: aqua;
   background-color: transparent;
   top: 30px;
@@ -299,7 +298,11 @@ of overlay and transparency easier */
   left: -50px;
 }
 
-.controls.awake {
+.aroCtl {
+  opacity: 0.2;
+}
+
+.aroCtl.awake {
   opacity: 0.7;
 }
 

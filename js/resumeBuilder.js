@@ -9,6 +9,8 @@ appData.CONST.DATA_PLACEHOLDER = '%data%'; //common replacement string
 appData.CONST.ROW_HIDE = 'rowHide'; //css class; hide rows when paging
 appData.CONST.WAKE_CONTROL = 'awake'; //css class; show controls as awake (hover)
 appData.CONST.SLEEP_CONTROL = 'sleep'; //css class; hide unavailable controls
+appData.CONST.COLLAPSED = 'closed';//control block state collapsed/closed state
+appData.CONST.PAGING = 'paging';//control block has [some] page management active
 
 /**
  * Wrapper to load the résumé data using JSON structures
@@ -179,9 +181,22 @@ appData.initialize = function () {
         "config" : {
             "rowSelector" : '.work-entry',
             "overflow" : 6,
-            "pageLimit" : 5
+            "pageLimit" : 5,
+            "controlSet" : [
+                "PAGE_UP",
+                "PAGE_DOWN"
+            ]
         }
     };// ./appData.work
+    //.FULL_PAGE
+    //.TOP_OF_PAGE
+    //.END_OF_PAGE
+    //.MORE_ROWS
+    //.LESS_ROWS
+    //.RESET_PAGE
+    //.MORE_DETAILS
+    //.LESS_DETAILS
+    //resume controls.mm
 
 
     /**
@@ -362,7 +377,6 @@ appData.bio.display = function (bio) {
 };// ./appData.bio.display(bio)
 
 
-
 /**
  * Add the employment history details to the page.
  *
@@ -418,6 +432,7 @@ appData.work.display = function (work) {
         appData.controls.addBlockControls('#workExperience', work.config);
     }
 };// ./appData.work.display(work)
+
 
 /**
  * Add the project information to the web page
@@ -538,6 +553,7 @@ appData.education.display = function (education) {
     education.schools.forEach(addOneSchool);
 };// ./appData.education.display(education)
 
+
 /**
  * Return the internationaized version of a full name
  *
@@ -606,10 +622,6 @@ appData.app.build = function (root) {
     // (at least) the control block reset functions.
     ctl.configuration = {};
 
-    // Track the created control blocks, so that they can be found again?
-    // just use a .controls selector?
-    ctl.controlBlocks = [];
-
     /**
      * Add control to change page to internationalized content
      * @return {undefined}
@@ -618,6 +630,30 @@ appData.app.build = function (root) {
         /*global internationalizeButton */
         $('#main').append(internationalizeButton);
     };// ./showInternationalize = function ()
+
+    /**
+     * Detect non empty plain objects.
+     * @param  {object}  obj object to be tested
+     * @return {Boolean}     true when obj is a plain (non Array) object with at
+     *                       least one of its own properties
+     *
+     * Similar to jQuery.isEmptyObject(). but excludes prototype inherited
+     * properties, by checking getOwnPropertyNames | hasOwnProperty
+     *
+     * Ref: http://blog.niftysnippets.org/2010/09/say-what.html
+     */
+    ctl.isNonEmptyObject = function (obj) {
+        var key;
+        if ($.isPlainObject(obj)) {
+            if (Object.getOwnPropertyNames) {
+                return Object.getOwnPropertyNames(obj).length > 0;
+            }
+            for (key in obj) {
+                if (obj.hasOwnProperty(key)) { return true; }
+            }
+        }
+        return false;//Not a plain object, or is empty
+    };// ./isNonEmptyObject(obj)
 
     /**
      * configure a pageable section block of controls to their starting state
@@ -669,23 +705,12 @@ appData.app.build = function (root) {
      * @return {undefined}
      */
     ctl.addBlockControls = function (parentEle, options) {
-        var baseEle, controlEle;
-        // Insert the generic control wrapper as the first child of the parent
-        baseEle = $(parentEle).prepend(appData.TEMPLATES.BLK_CONTROLS);
-        controlEle = baseEle.children().first();// The just added wrapper
-        controlEle.append(appData.TEMPLATES.ARO_BUTTON);
-        controlEle.data('config', options);
-
-        //build option has not been specified yet
-        options.build(controlEle);
-
-        // TODO: try create control block before add to page
-        // baseEle = $(appData.TEMPLATES.BLK_CONTROLS);
-        // controlEle = baseEle.children().first();// The just added wrapper
-        // controlEle.append(appData.TEMPLATES.ARO_BUTTON);
-        // controlEle.data('config', options);
-        // options.build(controlEle);
-        // $(parentEle).prepend(baseEle);//The wrapper all filled in
+        var controlEle;
+        controlEle = $(appData.TEMPLATES.BLK_CONTROLS);//basic wrapper
+        controlEle.append(appData.TEMPLATES.ARO_BUTTON);//root control for block
+        options.build(controlEle, options, parentEle);//add needed controls
+        // Insert the populated wrapper as the first child of the parent
+        $(parentEle).prepend(controlEle);
     };// ./addBlockControls(parentEle, options)
 
     /**
@@ -696,25 +721,43 @@ appData.app.build = function (root) {
      *
      *  ../../Resume Controls.mm
      */
-    ctl.buildPageable = function (controlBlockWrapper) {
-        var parentEle = $(controlBlockWrapper);
-        /////////////////////////////////////
-        //Individual (css) button controls //
-        /////////////////////////////////////
+    ctl.buildPageable = function (controlBlockWrapper, options) {//, scopeEle
+        var wrapperEle = $(controlBlockWrapper);
+        if (!$.isPlainObject(options)) {
+            throw new TypeError(
+                'No options supplied to build pageable control block'
+            );
+        }
+        wrapperEle.data('config', options);
 
-        parentEle.append(appData.TEMPLATES.PAGE_UP);
-        parentEle.append(appData.TEMPLATES.PAGE_DOWN);
-        //.FULL_PAGE
-        //.TOP_OF_PAGE
-        //.END_OF_PAGE
-        //.MORE_ROWS
-        //.LESS_ROWS
-        //.RESET_PAGE
-        //.MORE_DETAILS
-        //.LESS_DETAILS
-        //.MM
+        ///////////////////////////////////////////////
+        //Individual control elements from templates //
+        ///////////////////////////////////////////////
+        if ($.isArray(options.controlSet)) {
+            //Some control templates were specified
+            options.controlSet.forEach(function (ctlTemplate) {
+                wrapperEle.append(appData.TEMPLATES[ctlTemplate]);
+            });
+        }
+
+        //Include scopeEle if need access to the context for the block of
+        //controls.
+        //$(scopeEle).children().length
+        //Not needed if details are not used to determine which controls are
+        //added to the block.  They will stay hidden unless/until needed.
+
+        //If fixed positioning:
+        //  1) use css rules to position the [sub] controls
+        //  2) use js to position at time of creation
+        //      a) hard-coded logic
+        //      b) configuration logic
+        //      c) dynamic from page context
+        //If responsive
+        //  1) use css rules (and media queries)
+        //  2) use js to [re]position on resize
+        //      sub options as for fixed positioning
     };// ./buildPageable(controlBlockWrapper)
-};
+};// ./appData.app.build(root)
 
 /**
  * bind the handlers needed for interactive functionality
@@ -730,10 +773,67 @@ appData.app.initialize = function (root) {
      * @return {undefined}
      */
     ctl.baseClick = function (e) {
+        var ctlEle, ctlConfiguration, rowEles, blockOverflow, pageGroup;
         console.log('baseClick');
-        console.log($(this).data().config.rowSelector);
         console.log(e.handleObj.namespace);
-        console.log($.isPlainObject(e));
+
+        // A bit of sanity check validation
+        ctlEle = $(this);
+        if (ctlEle.length !== 1) {
+            throw new TypeError('"this" is not a valid element in baseClick');
+        }
+        console.log(ctlEle.class);
+        ctlConfiguration = ctlEle.data().config;
+        if (!ctl.isNonEmptyObject(ctlConfiguration)) {
+            throw new TypeError('No configuration data supplied for element ' +
+                'responded to by baseClick');
+        }
+
+        //Use the current state to decide whether need to show or hide controls
+        ctlConfiguration.state = ctlConfiguration.state ||
+            appData.CONST.COLLAPSED;//Initialize when does not yet exist
+        if (ctlConfiguration.state === appData.CONST.COLLAPSED) {
+            console.log('open controls');
+            // Only the root of the control set is currently being shown: Open
+            // up the next level
+
+            //Use the embeded configuration information to figure out what to do
+            if (typeof ctlConfiguration.rowSelector === 'string') {
+                console.log(ctlConfiguration.rowSelector);
+                //Looks like paging controls may be needed.
+                rowEles = $(ctlConfiguration.rowSelector);
+                // Get or set default for full page length (no next page), and
+                // row limit when there are more pages available.
+                blockOverflow = ctlConfiguration.overflow || rowEles.length;
+                //blockPageLimit = ctlConfiguration.pageLimit || blockOverflow;
+                if (rowEles.length > blockOverflow) {
+                    // wake up the known paging controls
+                    console.log('wake paging');
+                    //Considered using an array in CONST to hold the list of
+                    // paging controls to wakeup here, but decided that further
+                    // logic is going to manage which controls to display based
+                    // on the actual data.  Use a local array instead that can
+                    // be populated programmatically (just) before getting here.
+                    pageGroup = ['.pageUp', '.pageDown'];
+                    pageGroup.forEach(function (mask) {
+                        ctlEle.children(mask).
+                            removeClass(appData.CONST.SLEEP_CONTROL);
+                    });
+                    ctlConfiguration.state = appData.CONST.PAGING;
+                } // else { !(rowEles.length > blockOverflow)
+                    // Too few rows to ever need any paging controls
+                //}
+                // TODO: controls to show more or less details, hide all show all
+                // another section of the configiration object?
+            }// ./if (typeof ctlConfiguration.rowSelector === 'string')
+        } else { // !(ctlConfiguration.state === 'closed')
+            console.log('close controls');
+            // The root was clicked with other controls open; close all of the
+            // child controls in the set, except for the first / root controld
+            ctlEle.children('.aroCtl').slice(1).
+                addClass(appData.CONST.SLEEP_CONTROL);
+            ctlConfiguration.state = appData.CONST.COLLAPSED;
+        }// ./else !(ctlConfiguration.state === 'closed')
         /*
             MouseEvent
             click
@@ -770,34 +870,16 @@ appData.app.initialize = function (root) {
     };// ./baseClick(e)
 
     //Setup event delegate handlers for the interactive controls
-    $('#main').on('mouseenter', '.controls', function () {
-        console.log('mouseenter controls');
-        console.log($(this).data());
+    $('#main').on('mouseenter', '.aroCtl', function () {
+        console.log('mouseenter ARO');
+        console.log($(this).parent().data());
         $(this).addClass(appData.CONST.WAKE_CONTROL);
     });
-    $('#main').on('mouseleave', '.controls', function () {
+    $('#main').on('mouseleave', '.aroCtl', function () {
         $(this).removeClass(appData.CONST.WAKE_CONTROL);
     });
-    // $('#main').on('click.aro', '.controls', ctl.baseClick);
-    // fail $('.controls').on('click.aro', 'div', ctl.baseClick);
-    // fail $('.controls').on('click.aro', '.controls > div', ctl.baseClick);
-    // fail? $('.controls').on('click.aro', '.aroCtl', ctl.baseClick);
     $('.controls').on('click.aro', ctl.baseClick);
-    // TODO: add handler to activate the controls
-    //      hover: show expanded controls
-    //      click: open / lock controls
-    //   show all
-    //   reset
-    //   close
-    //   hide all
-    //   page up | down
-    //   more
-    //   less
-    // ? could add full set of controls to start, and just hide with css?
-    // ../../Resume Controls.mm
 
-    //Let css position the sub controls?
-    //Use js and position relative to base?
     // TODO: trigger reset action/event instead of direct function call?
     $.each($('.controls'), function (idx, controlEle) {
         ctl.resetBlock(controlEle, idx);// idx ignored; jslint pacifier
