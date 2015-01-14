@@ -11,6 +11,12 @@ appData.CONST.WAKE_CONTROL = 'awake'; //css class; show controls as awake (hover
 appData.CONST.SLEEP_CONTROL = 'sleep'; //css class; hide unavailable controls
 appData.CONST.COLLAPSED = 'closed';//control block state collapsed/closed state
 appData.CONST.PAGING = 'paging';//control block has [some] page management active
+appData.CONST.CONTROL_TAG = 'aroCtl';//tag to identify control elements
+appData.CONST.CONTROL_FUNCTIONS = [//based on css class tag
+    'blockRoot',
+    'pageUp',
+    'pageDown'
+];
 
 /**
  * Wrapper to load the résumé data using JSON structures
@@ -281,7 +287,7 @@ appData.initialize = function () {
      */
     appData.TEMPLATES = {
         "BLK_CONTROLS" : "<section class=\"controls sleep\"></section>",
-        "ARO_BUTTON" : "<div class=\"aroCtl\"><div class=\"target\"></div><div class=\"inner\"></div></div>",
+        "ARO_BUTTON" : "<div class=\"aroCtl blockRoot\"><div class=\"target\"></div><div class=\"inner\"></div></div>",
         "PAGE_UP" : "<div class=\"aroCtl arrow pageUp\"></div>",
         "PAGE_DOWN" : "<div class=\"aroCtl arrow pageDown\"></div>"
     };// ./appData.TEMPLATES
@@ -757,55 +763,85 @@ appData.app.build = function (root) {
         //  2) use js to [re]position on resize
         //      sub options as for fixed positioning
     };// ./buildPageable(controlBlockWrapper)
-};// ./appData.app.build(root)
-
-/**
- * bind the handlers needed for interactive functionality
- * @param  {[type]} root [description]
- * @return {undefined}
- */
-appData.app.initialize = function (root) {
-    'use strict';
-    var ctl = root.controls;
 
     /**
-     * Show the defined menu when a control button is clicked
-     * @return {undefined}
+     * Trace event path information to locate the (nearest parent) control
+     *
+     * @param  {eventObject} evObj jQuery event object for control delegate
+     * @return {jQueryElement}     The matched control element (or null)
      */
-    ctl.baseClick = function (e) {
-        var ctlEle, ctlConfiguration, rowEles, blockOverflow, pageGroup;
-        console.log('baseClick');
-        console.log(e.handleObj.namespace);
+    ctl.locateEventControl = function (evObj) {
+        /**
+         * Recursive closure function to locate the actual control element in
+         * the delegate event path (chain)
+         * @param  {DOMelement} ele DOM element to start/continue search from
+         * @return {jQueryElement}  The matched control element (or null)
+         */
+        function walkUpFrom(ele) {
+            var jqEle;
+            jqEle = $(ele);
+            if (jqEle.hasClass(appData.CONST.CONTROL_TAG)) {
+                return jqEle;
+            }
+            if (ele === evObj.currentTarget) {//closure reference
+                return null;//could throw typeError instead
+            }
+            return walkUpFrom(ele.parentElement);
+        }// ./walkUpFrom(ele)
 
-        // A bit of sanity check validation
-        ctlEle = $(this);
-        if (ctlEle.length !== 1) {
-            throw new TypeError('"this" is not a valid element in baseClick');
-        }
-        console.log(ctlEle.class);
-        ctlConfiguration = ctlEle.data().config;
-        if (!ctl.isNonEmptyObject(ctlConfiguration)) {
-            throw new TypeError('No configuration data supplied for element ' +
-                'responded to by baseClick');
-        }
+        return walkUpFrom(evObj.target);
+    };// ./locateEventControl(evObj)
 
+    /**
+     * Determine the function that using the control triggers
+     * @param  {string} ctlClass class name string for a control element
+     * @return {integer}         function identifier for the associated control
+     */
+    ctl.getControlFunction = function (ctlClass) {//ctlEle if class not enough
+        // LOGIC QUERY:
+        //check if each known function tag exists in the class list?
+        //check if each class in the list is in the known function tags?
+        var classes, cls, ctlFunction;
+        if (typeof ctlClass !== 'string') {
+            throw new TypeError(
+                'getControlFunction was not passed a string argument'
+            );
+        }
+        classes = ctlClass.split(' ');//array of individual class names
+        if (classes.length === 0) {
+            throw new RangeError('no function tags exist for control element');
+        }
+        //Process active classes in descending order: match likely at the end
+        for (cls = classes.length - 1; cls >= 0; cls -= 1) {
+            ctlFunction = appData.CONST.CONTROL_FUNCTIONS.indexOf(classes[cls]);
+            if (ctlFunction >= 0) {
+                return ctlFunction;//Found a tag matching the class name
+            }
+        }// ./for
+        throw new RangeError(
+            'control element does not have a recognized function tag'
+        );
+    };// ./getControlFunction(ctlClass)
+
+    ctl.toggleControls = function (ctlEle, blkConfig) {
+        var rowEles, blockOverflow, pageGroup;
         //Use the current state to decide whether need to show or hide controls
-        ctlConfiguration.state = ctlConfiguration.state ||
-            appData.CONST.COLLAPSED;//Initialize when does not yet exist
-        if (ctlConfiguration.state === appData.CONST.COLLAPSED) {
+        blkConfig.state = blkConfig.state ||
+            appData.CONST.COLLAPSED;//Initialize when state does not yet exist
+        if (blkConfig.state === appData.CONST.COLLAPSED) {
             console.log('open controls');
             // Only the root of the control set is currently being shown: Open
             // up the next level
 
             //Use the embeded configuration information to figure out what to do
-            if (typeof ctlConfiguration.rowSelector === 'string') {
-                console.log(ctlConfiguration.rowSelector);
+            if (typeof blkConfig.rowSelector === 'string') {
+                console.log(blkConfig.rowSelector);
                 //Looks like paging controls may be needed.
-                rowEles = $(ctlConfiguration.rowSelector);
+                rowEles = $(blkConfig.rowSelector);
                 // Get or set default for full page length (no next page), and
                 // row limit when there are more pages available.
-                blockOverflow = ctlConfiguration.overflow || rowEles.length;
-                //blockPageLimit = ctlConfiguration.pageLimit || blockOverflow;
+                blockOverflow = blkConfig.overflow || rowEles.length;
+                //blockPageLimit = blkConfig.pageLimit || blockOverflow;
                 if (rowEles.length > blockOverflow) {
                     // wake up the known paging controls
                     console.log('wake paging');
@@ -819,21 +855,21 @@ appData.app.initialize = function (root) {
                         ctlEle.children(mask).
                             removeClass(appData.CONST.SLEEP_CONTROL);
                     });
-                    ctlConfiguration.state = appData.CONST.PAGING;
+                    blkConfig.state = appData.CONST.PAGING;
                 } // else { !(rowEles.length > blockOverflow)
                     // Too few rows to ever need any paging controls
                 //}
                 // TODO: controls to show more or less details, hide all show all
                 // another section of the configiration object?
-            }// ./if (typeof ctlConfiguration.rowSelector === 'string')
-        } else { // !(ctlConfiguration.state === 'closed')
+            }// ./if (typeof blkConfig.rowSelector === 'string')
+        } else { // !(blkConfig.state === 'closed')
             console.log('close controls');
             // The root was clicked with other controls open; close all of the
             // child controls in the set, except for the first / root controld
             ctlEle.children('.aroCtl').slice(1).
                 addClass(appData.CONST.SLEEP_CONTROL);
-            ctlConfiguration.state = appData.CONST.COLLAPSED;
-        }// ./else !(ctlConfiguration.state === 'closed')
+            blkConfig.state = appData.CONST.COLLAPSED;
+        }// ./else !(blkConfig.state === 'closed')
         /*
             MouseEvent
             click
@@ -867,6 +903,79 @@ appData.app.initialize = function (root) {
                 screenX: OS viewport?
                 screenY
         */
+    };// ./toggleControls(ctlEle, blkConfig)
+
+    ctl.processPageUp = function (ctlEle, blkConfig) {
+        console.log('processPageUp stub');
+    };// ./processPageUp(ctlEle, blkConfig)
+
+};// ./appData.app.build(root)
+
+/**
+ * bind the handlers needed for interactive functionality
+ * @param  {[type]} root [description]
+ * @return {undefined}
+ */
+appData.app.initialize = function (root) {
+    'use strict';
+    var ctl = root.controls;
+
+    /**
+     * Handle all of the click events for all control function blocks
+     * A single delate handler, instead of attaching a handler to each control
+     *
+     * @return {undefined}
+     */
+    ctl.baseClick = function (e) {
+        var ctlEle, ctlConfiguration, ctlTarget, ctlFunction;
+        console.log('baseClick');
+
+        // A bit of sanity check validation
+        ctlEle = $(this);
+        if (ctlEle.length !== 1) {
+            throw new TypeError('"this" is not a valid element in baseClick');
+        }
+        console.log(ctlEle.attr('class'));
+        ctlConfiguration = ctlEle.data().config;
+        if (!ctl.isNonEmptyObject(ctlConfiguration)) {
+            throw new TypeError('No configuration data supplied for element ' +
+                'delegated to in baseClick');
+        }
+
+        // LOGIC QUERY:
+        //Is class going to be enough to both find the top element for any
+        //control in the block, and to uniquely identify which control it is
+        //once found?
+        //For css control graphics, the set of classes is going have to be
+        //unique, as long as the visual image for each control is unique.
+        //That does not mean that a single class is enough to be unique, so
+        //be careful.  EG: "arrow pageup", "text pageup"
+        ctlTarget = ctl.locateEventControl(e);
+        console.log(ctlTarget.attr('class'));
+        //ctlFunction = ctl.getControlFunction(ctlTarget); //only if need more
+        ctlFunction = ctl.getControlFunction(ctlTarget.attr('class'));
+        console.log(ctlFunction);
+        console.log(appData.CONST.CONTROL_FUNCTIONS[ctlFunction]);
+
+        // LOGIC QUERY:
+        // using (a bunch) of inner functions for closure would eliminate the
+        // need to pass most (or all ) of the parameters to the 'processing'
+        // functions.  Or duplicating functionality.  Handle duplication by
+        // using a common function, and (if needed) returning an object
+        // holding the needed properties
+        // NOTE: the indenting may not match the style guide, but is needed to
+        // keep jslint happy
+        switch (ctlFunction) {//indicies to appData.CONST.CONTROL_FUNCTIONS
+        case 0:
+            ctl.toggleControls(ctlEle, ctlConfiguration);
+            break;
+        case 1:
+            ctl.processPageUp(ctlEle, ctlConfiguration);
+            break;
+        default:
+            throw new RangeError('identified function was not processed');
+        }
+
     };// ./baseClick(e)
 
     //Setup event delegate handlers for the interactive controls
