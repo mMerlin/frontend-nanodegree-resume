@@ -17,6 +17,10 @@ appData.CONST.CONTROL_FUNCTIONS = [//based on css class tag
     'pageUp',
     'pageDown'
 ];
+appData.CONST.START_STATE = 'working';//Page state analysis started
+appData.CONST.FINAL_STATE = 'complete';//Page state analysis started
+appData.CONST.ERROR_STATE = 'error';//Page state analysis started
+
 
 /**
  * Wrapper to load the résumé data using JSON structures
@@ -617,7 +621,8 @@ appData.app = {};
  */
 appData.app.build = function (root) {
     'use strict';
-    var ctl;
+    var ctl, isNonEmptyObject, locateEventControl, getControlFunction,
+        toggleControls, processPageUp, buildPageState;
 
     // Common functions to support controls
     root.controls = {};
@@ -628,14 +633,10 @@ appData.app.build = function (root) {
     // (at least) the control block reset functions.
     ctl.configuration = {};
 
-    /**
-     * Add control to change page to internationalized content
-     * @return {undefined}
-     */
-    ctl.showInternationalize = function () {
-        /*global internationalizeButton */
-        $('#main').append(internationalizeButton);
-    };// ./showInternationalize = function ()
+
+    //////////////////////////////////////////////////////////////////////////
+    // Local helper and utility functions: Accessed via local/closure scope //
+    //////////////////////////////////////////////////////////////////////////
 
     /**
      * Detect non empty plain objects.
@@ -648,7 +649,7 @@ appData.app.build = function (root) {
      *
      * Ref: http://blog.niftysnippets.org/2010/09/say-what.html
      */
-    ctl.isNonEmptyObject = function (obj) {
+    isNonEmptyObject = function (obj) {
         var key;
         if ($.isPlainObject(obj)) {
             if (Object.getOwnPropertyNames) {
@@ -662,118 +663,16 @@ appData.app.build = function (root) {
     };// ./isNonEmptyObject(obj)
 
     /**
-     * configure a pageable section block of controls to their starting state
-     * @param  {jQuery Selector} controlRoot wrapper for the block of controls
-     * @return {undefined}
-     */
-    ctl.resetBlock = function (controlRoot) {
-        var controlEle, rowSelector, rowEles, totalRows, blockConfig,
-            blockOverflow, blockPageLimit;
-        controlEle = $(controlRoot);// control block wrapper
-        // get block configuration settings, or default to an empty objectd
-        blockConfig = controlEle.data().config || {};
-        if (typeof blockConfig.rowSelector === 'string') {
-            // A (potentially) pageable block
-            rowSelector = blockConfig.rowSelector; //tag for line/row in 'page'
-            rowEles = controlEle.parent().children(rowSelector);//populated rows
-            totalRows = rowEles.length;
-
-            // Get or set default for full page length (no next page), and row
-            // limit when there are more pages.
-            blockOverflow = blockConfig.overflow || totalRows;
-            blockPageLimit = blockConfig.pageLimit || blockOverflow;
-            if (totalRows > blockOverflow) {
-                //Setup to show only the first page worth of rows
-                rowEles.slice(0, blockPageLimit)
-                    .removeClass(appData.CONST.ROW_HIDE);
-                rowEles.slice(blockPageLimit)
-                    .addClass(appData.CONST.ROW_HIDE);
-            } else {
-                //Few enough rows to display them all to start
-                rowEles.removeClass(appData.CONST.ROW_HIDE);
-            }
-        }
-        // reset the control states too
-        // Hide everything except the activation symbol / marker / icon
-        controlEle.children().slice(1).addClass(appData.CONST.SLEEP_CONTROL);
-        controlEle.children().first().removeClass(appData.CONST.SLEEP_CONTROL);
-        // The wrapper is created 'sleeping' to avoid some flicker, so need to
-        // wake it up (at least) the first time
-        controlEle.removeClass(appData.CONST.SLEEP_CONTROL);
-    };// ./resetBlock(controlRoot)
-
-    /**
-     * [addBlockControls description]
-     * @param {selector} parentEle   jQuery Selector for root element of block
-     *                               to add controls to
-     * @param {object}   options     configuration information for the controls
-     *                               of the block
-     * @return {undefined}
-     */
-    ctl.addBlockControls = function (parentEle, options) {
-        var controlEle;
-        controlEle = $(appData.TEMPLATES.BLK_CONTROLS);//basic wrapper
-        controlEle.append(appData.TEMPLATES.ARO_BUTTON);//root control for block
-        options.build(controlEle, options, parentEle);//add needed controls
-        // Insert the populated wrapper as the first child of the parent
-        $(parentEle).prepend(controlEle);
-    };// ./addBlockControls(parentEle, options)
-
-    /**
-     * Create a 'standard' set of controls to handle paging of block contents
-     * @param  {[type]} controlBlockWrapper [description]
-     * @param  {[type]} options             [description]
-     * @return {undefined}
-     *
-     *  ../../Resume Controls.mm
-     */
-    ctl.buildPageable = function (controlBlockWrapper, options) {//, scopeEle
-        var wrapperEle = $(controlBlockWrapper);
-        if (!$.isPlainObject(options)) {
-            throw new TypeError(
-                'No options supplied to build pageable control block'
-            );
-        }
-        wrapperEle.data('config', options);
-
-        ///////////////////////////////////////////////
-        //Individual control elements from templates //
-        ///////////////////////////////////////////////
-        if ($.isArray(options.controlSet)) {
-            //Some control templates were specified
-            options.controlSet.forEach(function (ctlTemplate) {
-                wrapperEle.append(appData.TEMPLATES[ctlTemplate]);
-            });
-        }
-
-        //Include scopeEle if need access to the context for the block of
-        //controls.
-        //$(scopeEle).children().length
-        //Not needed if details are not used to determine which controls are
-        //added to the block.  They will stay hidden unless/until needed.
-
-        //If fixed positioning:
-        //  1) use css rules to position the [sub] controls
-        //  2) use js to position at time of creation
-        //      a) hard-coded logic
-        //      b) configuration logic
-        //      c) dynamic from page context
-        //If responsive
-        //  1) use css rules (and media queries)
-        //  2) use js to [re]position on resize
-        //      sub options as for fixed positioning
-    };// ./buildPageable(controlBlockWrapper)
-
-    /**
      * Trace event path information to locate the (nearest parent) control
      *
      * @param  {eventObject} evObj jQuery event object for control delegate
      * @return {jQueryElement}     The matched control element (or null)
      */
-    ctl.locateEventControl = function (evObj) {
+    locateEventControl = function (evObj) {
         /**
          * Recursive closure function to locate the actual control element in
          * the delegate event path (chain)
+         *
          * @param  {DOMelement} ele DOM element to start/continue search from
          * @return {jQueryElement}  The matched control element (or null)
          */
@@ -797,7 +696,7 @@ appData.app.build = function (root) {
      * @param  {string} ctlClass class name string for a control element
      * @return {integer}         function identifier for the associated control
      */
-    ctl.getControlFunction = function (ctlClass) {//ctlEle if class not enough
+    getControlFunction = function (ctlClass) {//ctlEle if class not enough
         // LOGIC QUERY:
         //check if each known function tag exists in the class list?
         //check if each class in the list is in the known function tags?
@@ -823,8 +722,20 @@ appData.app.build = function (root) {
         );
     };// ./getControlFunction(ctlClass)
 
-    ctl.toggleControls = function (ctlEle, blkConfig) {
-        var rowEles, blockOverflow, pageGroup;
+    /**
+     * Show initial, or hide all control functions for the block
+     * @param  {jQueryElement} ctlEle root element of control block
+     * @return {undefined}
+     */
+    toggleControls = function (ctlEle) {
+        var blkConfig, rowEles, blockOverflow, pageGroup;
+        blkConfig = ctlEle.data().config;
+        if (!isNonEmptyObject(blkConfig)) {
+            throw new TypeError(
+                'No configuration data supplied for control element block'
+            );
+        }
+
         //Use the current state to decide whether need to show or hide controls
         blkConfig.state = blkConfig.state ||
             appData.CONST.COLLAPSED;//Initialize when state does not yet exist
@@ -905,20 +816,245 @@ appData.app.build = function (root) {
         */
     };// ./toggleControls(ctlEle, blkConfig)
 
-    ctl.processPageUp = function (ctlEle, blkConfig) {
-        console.log('processPageUp stub');
+    /**
+     * Collect state information for the [pseudo] page associated with the
+     * control block
+     *
+     * @param  {Element} ctlEle   wrapper jQuery element for the control block
+     * @param  {object} blkConfig configuration settings for the current page
+     * @return {object}           State information for the current page
+     */
+    buildPageState = function (ctlEle) {
+        var pageState, blkConfig, hiddenRows, row, visibleRows;
+        pageState = {};
+        pageState.state = appData.CONST.START_STATE;
+
+        blkConfig = ctlEle.data().config;
+        if (!isNonEmptyObject(blkConfig)) {
+            throw new TypeError(
+                'No configuration data supplied for control element block'
+            );
+        }
+
+        pageState.rowSelector = blkConfig.rowSelector;
+        pageState.allRows = ctlEle.parent().children(pageState.rowSelector);
+        pageState.rowCount = pageState.allRows.length;
+        pageState.lastRow = pageState.rowCount - 1;
+        pageState.overflow = blkConfig.overflow || pageState.totalRows;
+        pageState.pageLimit = blkConfig.pageLimit || pageState.overflow;
+        //locate current page: first and last rows without ROW_HIDE class
+        hiddenRows = pageState.allRows.filter('.' + appData.CONST.ROW_HIDE);
+        visibleRows = pageState.rowCount - hiddenRows.length;
+        if (visibleRows === pageState.rowCount) {
+            // All rows are hidden
+            // LOGIC QUERY: what if rowCount === 0 ?
+            pageState.pageTop = -1;
+            pageState.pageEnd = -1;
+        } else if (visibleRows === 0) {
+            // All rows are visible
+            pageState.pageTop = 0;
+            pageState.pageEnd = pageState.rowCount - 1;
+        } else {
+            // Some but not all rows are hidden: find the non-hidden block
+            for (row = 0; row < pageState.rowCount; row += 1) {
+                // Locate the first non-hidden row
+                if (!$(pageState.allRows[row]).hasClass(appData.CONST.ROW_HIDE)) {
+                    pageState.pageTop = row;
+                    row = pageState.rowCount;
+                }
+            }
+            // Verify that enough following rows are also not hidden to account
+            // for the difference in hidden and total row counts.
+            for (row = pageState.pageTop + 1;
+                    row < pageState.pageTop + visibleRows; row += 1
+                    ) {
+                if ($(pageState.allRows[row]).hasClass(appData.CONST.ROW_HIDE)) {
+                    // Data error: visible rows are not contiqious block
+                    throw new RangeError('split page detected');
+                }
+            }
+            pageState.pageEnd = pageState.pageTop + visibleRows - 1;
+        }
+        pageState.state = appData.CONST.FINAL_STATE;
+
+        return pageState;
+    };// ./buildPageState(ctlEle, blkConfig)
+
+    /**
+     * Advance the display for the controlled section by one page
+     *
+     * Hide the currently displayed rows, and show the following rows based on
+     * the configured page size.
+     * LOGIC QUERY:
+     * If not enough remaining rows to fill a page:
+     * - display a partial page
+     * - add enough rows from previous data to fill the page
+     * - configuration setting?
+     *
+     * @param  {jQueryElement} ctlEle    Root control for the current block
+     * @param  {object}        blkConfig Configuration for control block
+     * @return {undefined}
+     */
+    processPageUp = function (ctlEle) {
+        var pgState, hideEnd, showEnd;
+
+        pgState = buildPageState(ctlEle);
+        if (pgState.state !== appData.CONST.FINAL_STATE) {
+            throw new ReferenceError('page up references invalid page data');
+        }
+
+        // Safety net: should never hit this, if control is properly disabled
+        if (pgState.pageEnd >= pgState.lastRow) {
+            //Already at the end of the page nothing to do
+            return;
+        }
+
+        //Get values for slice ranges: end is one higher than actually used
+        //hideStart = pgState.pageTop;
+        hideEnd = pgState.pageEnd + 1;//showStart = hideEnd;
+        showEnd = hideEnd + pgState.pageLimit;
+        if (hideEnd + pgState.overflow >= pgState.rowCount) {
+            //Prevent orphans at the end of the data
+            showEnd = pgState.rowCount;
+        }
+        if (showEnd > pgState.rowCount) {
+            showEnd = pgState.rowCount;
+        }
+        // LOGIC QUERY:
+        //If want to show a full page at the end of the document, set hideEnd
+        //to showEnd - pgState.rowCount (if that is less)
+
+        // Hide the rows for the current page, and show them for the next one.
+        pgState.allRows.slice(pgState.pageTop, hideEnd).
+            addClass(appData.CONST.ROW_HIDE);
+        pgState.allRows.slice(hideEnd, showEnd).
+            removeClass(appData.CONST.ROW_HIDE);
     };// ./processPageUp(ctlEle, blkConfig)
 
-};// ./appData.app.build(root)
 
-/**
- * bind the handlers needed for interactive functionality
- * @param  {[type]} root [description]
- * @return {undefined}
- */
-appData.app.initialize = function (root) {
-    'use strict';
-    var ctl = root.controls;
+    /////////////////////////////////////////////////////////////////////
+    // Exported functions accessable outside the current closure scope //
+    /////////////////////////////////////////////////////////////////////
+
+    /**
+     * Add control to change page to internationalized content
+     * @return {undefined}
+     */
+    ctl.showInternationalize = function () {
+        /*global internationalizeButton */
+        $('#main').append(internationalizeButton);
+    };// ./showInternationalize = function ()
+
+    /**
+     * configure a pageable section block of controls to their starting state
+     *
+     * LOGIC QUERY:
+     * Might move to helper functions set, when change reference to use event
+     * trigger instead of direct call
+     *
+     * @param  {jQuery Selector} controlRoot wrapper for the block of controls
+     * @return {undefined}
+     */
+    ctl.resetBlock = function (controlRoot) {
+        var controlEle, rowSelector, rowEles, totalRows, blockConfig,
+            blockOverflow, blockPageLimit;
+        controlEle = $(controlRoot);// control block wrapper
+        // get block configuration settings, or default to an empty objectd
+        blockConfig = controlEle.data().config || {};
+        if (typeof blockConfig.rowSelector === 'string') {
+            // A (potentially) pageable block
+            // TODO: refactor to use the common function
+            //pageConfig = buildPageState(ctlEle, blkConfig);
+            rowSelector = blockConfig.rowSelector; //tag for line/row in 'page'
+            rowEles = controlEle.parent().children(rowSelector);//populated rows
+            totalRows = rowEles.length;
+
+            // Get or set default for full page length (no next page), and row
+            // limit when there are more pages.
+            blockOverflow = blockConfig.overflow || totalRows;
+            blockPageLimit = blockConfig.pageLimit || blockOverflow;
+            if (totalRows > blockOverflow) {
+                //Setup to show only the first page worth of rows
+                rowEles.slice(0, blockPageLimit)
+                    .removeClass(appData.CONST.ROW_HIDE);
+                rowEles.slice(blockPageLimit)
+                    .addClass(appData.CONST.ROW_HIDE);
+            } else {
+                //Few enough rows to display them all to start
+                rowEles.removeClass(appData.CONST.ROW_HIDE);
+            }
+        }
+        // reset the control states too
+        // Hide everything except the activation symbol / marker / icon
+        controlEle.children().slice(1).addClass(appData.CONST.SLEEP_CONTROL);
+        controlEle.children().first().removeClass(appData.CONST.SLEEP_CONTROL);
+        // The wrapper is created 'sleeping' to avoid some flicker, so need to
+        // wake it up (at least) the first time
+        controlEle.removeClass(appData.CONST.SLEEP_CONTROL);
+    };// ./resetBlock(controlRoot)
+
+    /**
+     * Create a 'standard' block of user interaction controls, populated based
+     * on the provided options
+     * @param {selector} parentEle   jQuery Selector for root element of block
+     *                               to add controls to
+     * @param {object}   options     configuration information for the controls
+     *                               of the block
+     * @return {undefined}
+     */
+    ctl.addBlockControls = function (parentEle, options) {
+        var controlEle;
+        controlEle = $(appData.TEMPLATES.BLK_CONTROLS);//basic wrapper
+        controlEle.append(appData.TEMPLATES.ARO_BUTTON);//root control for block
+        options.build(controlEle, options, parentEle);//add needed controls
+        // Insert the populated wrapper as the first child of the parent
+        $(parentEle).prepend(controlEle);
+    };// ./addBlockControls(parentEle, options)
+
+    /**
+     * Create a 'standard' set of controls to handle paging of block contents
+     * @param  {[type]} controlBlockWrapper [description]
+     * @param  {[type]} options             [description]
+     * @return {undefined}
+     *
+     *  ../../Resume Controls.mm
+     */
+    ctl.buildPageable = function (controlBlockWrapper, options) {//, scopeEle
+        var wrapperEle = $(controlBlockWrapper);
+        if (!$.isPlainObject(options)) {
+            throw new TypeError(
+                'No options supplied to build pageable control block'
+            );
+        }
+        wrapperEle.data('config', options);
+
+        ///////////////////////////////////////////////
+        //Individual control elements from templates //
+        ///////////////////////////////////////////////
+        if ($.isArray(options.controlSet)) {
+            //Some control templates were specified
+            options.controlSet.forEach(function (ctlTemplate) {
+                wrapperEle.append(appData.TEMPLATES[ctlTemplate]);
+            });
+        }
+
+        //Include scopeEle if need access to the context for the block of
+        //controls.
+        //$(scopeEle).children().length
+        //Not needed if details are not used to determine which controls are
+        //added to the block.  They will stay hidden unless/until needed.
+
+        //If fixed positioning:
+        //  1) use css rules to position the [sub] controls
+        //  2) use js to position at time of creation
+        //      a) hard-coded logic
+        //      b) configuration logic
+        //      c) dynamic from page context
+        //If responsive
+        //  1) use css rules (and media queries)
+        //  2) use js to [re]position on resize
+        //      sub options as for fixed positioning
+    };// ./buildPageable(controlBlockWrapper)
 
     /**
      * Handle all of the click events for all control function blocks
@@ -927,19 +1063,13 @@ appData.app.initialize = function (root) {
      * @return {undefined}
      */
     ctl.baseClick = function (e) {
-        var ctlEle, ctlConfiguration, ctlTarget, ctlFunction;
+        var ctlEle, ctlTarget, ctlFunction;
         console.log('baseClick');
 
         // A bit of sanity check validation
-        ctlEle = $(this);
+        ctlEle = $(this);// The wrapper for the block of controls
         if (ctlEle.length !== 1) {
             throw new TypeError('"this" is not a valid element in baseClick');
-        }
-        console.log(ctlEle.attr('class'));
-        ctlConfiguration = ctlEle.data().config;
-        if (!ctl.isNonEmptyObject(ctlConfiguration)) {
-            throw new TypeError('No configuration data supplied for element ' +
-                'delegated to in baseClick');
         }
 
         // LOGIC QUERY:
@@ -950,11 +1080,9 @@ appData.app.initialize = function (root) {
         //unique, as long as the visual image for each control is unique.
         //That does not mean that a single class is enough to be unique, so
         //be careful.  EG: "arrow pageup", "text pageup"
-        ctlTarget = ctl.locateEventControl(e);
-        console.log(ctlTarget.attr('class'));
-        //ctlFunction = ctl.getControlFunction(ctlTarget); //only if need more
-        ctlFunction = ctl.getControlFunction(ctlTarget.attr('class'));
-        console.log(ctlFunction);
+        ctlTarget = locateEventControl(e);
+        //ctlFunction = getControlFunction(ctlTarget); //only if need more
+        ctlFunction = getControlFunction(ctlTarget.attr('class'));
         console.log(appData.CONST.CONTROL_FUNCTIONS[ctlFunction]);
 
         // LOGIC QUERY:
@@ -967,21 +1095,29 @@ appData.app.initialize = function (root) {
         // keep jslint happy
         switch (ctlFunction) {//indicies to appData.CONST.CONTROL_FUNCTIONS
         case 0:
-            ctl.toggleControls(ctlEle, ctlConfiguration);
+            toggleControls(ctlEle);
             break;
         case 1:
-            ctl.processPageUp(ctlEle, ctlConfiguration);
+            processPageUp(ctlEle);
             break;
         default:
             throw new RangeError('identified function was not processed');
         }
 
     };// ./baseClick(e)
+};// ./appData.app.build(root)
+
+/**
+ * bind the handlers needed for interactive functionality
+ * @param  {[type]} root [description]
+ * @return {undefined}
+ */
+appData.app.initialize = function (root) {
+    'use strict';
+    var ctl = root.controls;
 
     //Setup event delegate handlers for the interactive controls
     $('#main').on('mouseenter', '.aroCtl', function () {
-        console.log('mouseenter ARO');
-        console.log($(this).parent().data());
         $(this).addClass(appData.CONST.WAKE_CONTROL);
     });
     $('#main').on('mouseleave', '.aroCtl', function () {
