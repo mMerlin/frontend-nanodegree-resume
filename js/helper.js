@@ -239,7 +239,8 @@ function initializeMap() {
   function createMapMarker(placeData, dataSource) {
     /*global google */
     var i, lat, lon, name, bounds, marker, infoWindow, infoContent,
-      reasonCount, foundReason, variantText;
+      reasonCount, foundReason, variantText, PLC_TEXT;
+    PLC_TEXT = appData.CONST.DATA_PLACEHOLDER;
 
     // The next lines save location data from the search result object to local variables
     lat = placeData.geometry.location.lat();  // latitude from the place service
@@ -266,7 +267,7 @@ function initializeMap() {
             foundFirst = true;
           }
           infoContent += setOptions.setInstance.replace(
-            appData.DATA_PLACEHOLDER,
+            PLC_TEXT,
             setOptions.sourceData[setOptions.setGroup][
               dataSource.reasons[j].occurrence
             ][setOptions.instanceProperty]
@@ -298,7 +299,7 @@ function initializeMap() {
             variantText = 'used to ';
           }
           infoContent += appData.masks.INFO_RESIDENCE.replace(
-            appData.DATA_PLACEHOLDER,
+            PLC_TEXT,
             variantText
           );
           i = reasonCount;//abort the rest of the loop
