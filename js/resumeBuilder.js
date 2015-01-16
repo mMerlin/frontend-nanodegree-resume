@@ -4,6 +4,16 @@ var appData;
 if (appData === undefined) {
     appData = {};
 }
+
+//template information, for extension to the base project
+appData.TEMPLATES = {
+    'BLK_CONTROLS' : '<section class="controls sleep"></section>',
+    'ARO_BUTTON' :
+        '<div class="aroCtl blockRoot"><div class="target"></div>' +
+        '<div class="inner"></div></div>',
+    'PAGE_UP' : '<div class="aroCtl arrow pageUp"></div>',
+    'PAGE_DOWN' : '<div class="aroCtl arrow pageDown"></div>'
+};// ./appData.TEMPLATES
 appData.CONST = {};
 appData.CONST.DATA_PLACEHOLDER = '%data%'; //common replacement string
 appData.CONST.ROW_HIDE = 'rowHide'; //css class; hide rows when paging
@@ -23,11 +33,14 @@ appData.CONST.ERROR_STATE = 'error';//Page state analysis started
 
 
 /**
- * Wrapper to load the résumé data using JSON structures
+ * Wrapper to load the main résumé objects
  * @return {undefined}
  */
-appData.initialize = function () {
+appData.initialize = function (root) {
     'use strict';
+    //Tell jslint to allow long lines in the JSON data structures
+    /*jslint maxlen: 150 */
+
     /*
         The Front-End Developer nanodegree course style guide
         http://udacity.github.io/frontend-nanodegree-styleguide/javascript.html
@@ -38,8 +51,6 @@ appData.initialize = function () {
         The styleguide says to use string concatenation to break long lines, but
         that is not valid when complying with JSON syntax.
      */
-    //Tell jslint to allow long lines in the JSON data structures
-    /*jslint maxlen: 150 */
 
     /**
      * Create and populate the object containing general biographical information
@@ -47,7 +58,7 @@ appData.initialize = function () {
      *
      * @type {Object}
      */
-    appData.bio = {
+    root.bio = {
         "name" :                "H. Phil Duby",
         "role" :                "Web Developer",
         "contacts" : {
@@ -78,9 +89,9 @@ appData.initialize = function () {
             "desktop support"
         ],
         "biopic" :              "images/biopic.jpg"
-    };// ./appData.bio
+    };// ./root.bio
     /* extended data blocks bio.contacts.voice, bio.contacts.postal */
-    //"skills" : html, css, javascript, jQuery, bootstrap, JSON
+    // "skills" : html, css, javascript, jQuery, bootstrap, JSON
     // framework, library, language, data formats
 
 
@@ -89,7 +100,7 @@ appData.initialize = function () {
      *
      * @type {Object}
      */
-    appData.work = {
+    root.work = {
         "jobs" : [
             {
                 "employer" :    "GDM",
@@ -197,7 +208,7 @@ appData.initialize = function () {
                 "PAGE_DOWN"
             ]
         }
-    };// ./appData.work
+    };// ./root.work
     //.FULL_PAGE
     //.TOP_OF_PAGE
     //.END_OF_PAGE
@@ -214,7 +225,7 @@ appData.initialize = function () {
      *
      * @type {Object}
      */
-    appData.projects = {
+    root.projects = {
         "projects" : [
             {
                 "title" :       "Page Mockup",
@@ -225,12 +236,13 @@ appData.initialize = function () {
             },
             {
                 "title" :       "Interactive Résumé",
-                "dates" : "2015",
-                "description" : "Build dynamic online résumé",
+                "dates" :       "2015",
+                "description" :
+                    "Build dynamic online résumé.&nbsp; You’re looking at a descendent of it!",
                 "images" : []
             }
         ]
-    };// ./appData.projects
+    };// ./root.projects
 
 
     /**
@@ -238,7 +250,7 @@ appData.initialize = function () {
      *
      * @type {Object}
      */
-    appData.education = {
+    root.education = {
         "schools" : [
             {
                 "name" :        "Southern Alberta Institute of Technology",
@@ -280,289 +292,268 @@ appData.initialize = function () {
                 "url" :         "https://www.udacity.com/course/cs101"
             }
         ]
-    };// ./appData.education
+    };// ./root.education
+
+
+    /////////////////////////////////////////////////////////////
+    // Encapsulate the data display functions into the objects //
+    /////////////////////////////////////////////////////////////
 
 
     /**
-     * Create and populate an object containing template information, for
-     * extension to the base project
-     *
-     * @type {Object}
+     * Add the basic biographical information to the page
+     * @param  {object} bio Biographical data object
+     * @return {undefined}
      */
-    appData.TEMPLATES = {
-        "BLK_CONTROLS" : "<section class=\"controls sleep\"></section>",
-        "ARO_BUTTON" : "<div class=\"aroCtl blockRoot\"><div class=\"target\"></div><div class=\"inner\"></div></div>",
-        "PAGE_UP" : "<div class=\"aroCtl arrow pageUp\"></div>",
-        "PAGE_DOWN" : "<div class=\"aroCtl arrow pageDown\"></div>"
-    };// ./appData.TEMPLATES
-};// ./appData.initialize()
-
-//Load the résumé data into application storage
-appData.initialize();
-
-
-/////////////////////////////////////////////////////////////
-// Encapsulate the data display functions into the objects //
-/////////////////////////////////////////////////////////////
-
-/**
- * Add the basic biographical information to the page
- * @param  {object} bio Biographical data object
- * @return {undefined}
- */
-appData.bio.display = function (bio) {
-    'use strict';
-    /*global HTMLheaderRole, HTMLheaderName, HTMLmobile, HTMLemail,
-        HTMLgithub, HTMLtwitter, HTMLblog, HTMLlocation, HTMLbioPic,
-        HTMLWelcomeMsg, HTMLskillsStart */
-    var formattedHtml, PLC_HLD;//[also] used in inner closure scope
-    PLC_HLD = appData.CONST.DATA_PLACEHOLDER;
-    if (!$.isPlainObject(bio)) {
-        //Major problem. This is not going to work, no practical runtime recovery
-        return false;
-    }
-
-    formattedHtml = HTMLheaderRole.replace(PLC_HLD,
-        bio.role || 'no role specified'
-        );
-    $('#header').prepend(formattedHtml);
-    formattedHtml = HTMLheaderName.replace(PLC_HLD,
-        bio.name || 'the unknown comic'
-        );
-    $('#header').prepend(formattedHtml);
-
-    //Individual contact details are optional: only insert when they exist
-    function showContact(template, dataSource) {
-        if (bio.contacts[dataSource]) {
-            formattedHtml = template.replace(PLC_HLD,
-                bio.contacts[dataSource]
-                );
-            $('#topContacts').append(formattedHtml);
+    root.bio.display = function (bio) {
+        /*global HTMLheaderRole, HTMLheaderName, HTMLmobile, HTMLemail,
+            HTMLgithub, HTMLtwitter, HTMLblog, HTMLlocation, HTMLbioPic,
+            HTMLWelcomeMsg, HTMLskillsStart */
+        var formattedHtml, PLC_HLD;//[also] used in inner closure scope
+        PLC_HLD = appData.CONST.DATA_PLACEHOLDER;
+        if (!$.isPlainObject(bio)) {
+            //Major problem. This is not going to work, no practical runtime recovery
+            return false;
         }
-    }// ./showContact(template, dataSource)
 
-    //Show contacts that do not have a preformatted template
-    function showGenericContact(contactType, dataSource) {
-        /*global HTMLcontactGeneric */
-        var partialTemplate;
-        partialTemplate = HTMLcontactGeneric.replace('%contact%', contactType);
-        showContact(partialTemplate, dataSource);
-    }// ./showGenericContact(contactType, dataSource)
+        formattedHtml = HTMLheaderRole.replace(PLC_HLD,
+            bio.role || 'no role specified'
+            );
+        $('#header').prepend(formattedHtml);
+        formattedHtml = HTMLheaderName.replace(PLC_HLD,
+            bio.name || 'the unknown comic'
+            );
+        $('#header').prepend(formattedHtml);
 
-    showContact(HTMLmobile, 'mobile');
-    showContact(HTMLemail, 'email');
-    showGenericContact('skype', 'skype');
-    showContact(HTMLgithub, 'github');
-    showContact(HTMLtwitter, 'twitter');
-    showContact(HTMLblog, 'blog');
-    showContact(HTMLlocation, 'location');
+        //Individual contact details are optional: only insert when they exist
+        function showContact(template, dataSource) {
+            if (bio.contacts[dataSource]) {
+                formattedHtml = template.replace(PLC_HLD,
+                    bio.contacts[dataSource]
+                    );
+                $('#topContacts').append(formattedHtml);
+            }
+        }// ./showContact(template, dataSource)
 
-    formattedHtml = HTMLbioPic.replace(PLC_HLD,
-        bio.biopic || 'http://placehold.it/100x100'
-        );
-    $('#header').append(formattedHtml);
-    formattedHtml = HTMLWelcomeMsg.replace(PLC_HLD,
-        bio.welcomeMessage || 'welcome not specified'
-        );
-    $('#header').append(formattedHtml);
+        //Show contacts that do not have a preformatted template
+        function showGenericContact(contactType, dataSource) {
+            /*global HTMLcontactGeneric */
+            var partialTemplate;
+            partialTemplate = HTMLcontactGeneric.replace('%contact%', contactType);
+            showContact(partialTemplate, dataSource);
+        }// ./showGenericContact(contactType, dataSource)
+
+        showContact(HTMLmobile, 'mobile');
+        showContact(HTMLemail, 'email');
+        showGenericContact('skype', 'skype');
+        showContact(HTMLgithub, 'github');
+        showContact(HTMLtwitter, 'twitter');
+        showContact(HTMLblog, 'blog');
+        showContact(HTMLlocation, 'location');
+
+        formattedHtml = HTMLbioPic.replace(PLC_HLD,
+            bio.biopic || 'http://placehold.it/100x100'
+            );
+        $('#header').append(formattedHtml);
+        formattedHtml = HTMLWelcomeMsg.replace(PLC_HLD,
+            bio.welcomeMessage || 'welcome not specified'
+            );
+        $('#header').append(formattedHtml);
+
+        /**
+         * Add a single skill entry to the page
+         * @param  {string} singleSkill The name/description for a single skill
+         * @return {undefined}
+         */
+        function showSkill(singleSkill) {
+            /*global HTMLskills */
+            formattedHtml = HTMLskills.replace(PLC_HLD,
+                singleSkill
+                );
+            $('#skills').append(formattedHtml);
+        }// ./showSkill(singleSkill)
+
+        // Add the skills summary to the header: only when skills exist
+        if ($.isArray(bio.skills) && bio.skills.length > 0) {
+            $('#header').append(HTMLskillsStart);
+            bio.skills.forEach(showSkill);//append all skills listed
+        }
+    };// ./root.bio.display(bio)
+
 
     /**
-     * Add a single skill entry to the page
-     * @param  {string} singleSkill The name/description for a single skill
+     * Add the employment history details to the page.
+     *
+     * @param  {object} work work experience information
      * @return {undefined}
      */
-    function showSkill(singleSkill) {
-        /*global HTMLskills */
-        formattedHtml = HTMLskills.replace(PLC_HLD,
-            singleSkill
-            );
-        $('#skills').append(formattedHtml);
-    }// ./showSkill(singleSkill)
+    root.work.display = function (work) {
+        /*global HTMLworkStart, HTMLworkEmployer, HTMLworkTitle, HTMLworkLocation,
+            HTMLworkDates, HTMLworkDescription */
+        var jobNum, jobEle, fmtEmployer, formattedHtml, PLC_HLD;
+        PLC_HLD = appData.CONST.DATA_PLACEHOLDER;
 
-    // Add the skills summary to the header: only when skills exist
-    if ($.isArray(bio.skills) && bio.skills.length > 0) {
-        $('#header').append(HTMLskillsStart);
-        bio.skills.forEach(showSkill);//append all skills listed
-    }
-};// ./appData.bio.display(bio)
+        if (!($.isPlainObject(work) && $.isArray(work.jobs))) {
+            //Major problem. This is not going to work, no practical runtime recovery
+            return false;
+        }
 
+        for (jobNum = 0; jobNum < work.jobs.length; jobNum += 1) {
 
-/**
- * Add the employment history details to the page.
- *
- * @param  {object} work work experience information
- * @return {undefined}
- */
-appData.work.display = function (work) {
-    'use strict';
-    /*global HTMLworkStart, HTMLworkEmployer, HTMLworkTitle, HTMLworkLocation,
-        HTMLworkDates, HTMLworkDescription */
-    var jobNum, jobEle, fmtEmployer, formattedHtml, PLC_HLD;
-    PLC_HLD = appData.CONST.DATA_PLACEHOLDER;
+            // Create (div) wrapper to hold details for single job
+            $('#workExperience').append(HTMLworkStart);
 
-    if (!($.isPlainObject(work) && $.isArray(work.jobs))) {
-        //Major problem. This is not going to work, no practical runtime recovery
-        return false;
-    }
+            fmtEmployer = HTMLworkEmployer.replace(PLC_HLD,
+                work.jobs[jobNum].employer || 'no employer'
+                );
+            formattedHtml = HTMLworkTitle.replace(PLC_HLD,
+                work.jobs[jobNum].title || 'no title'
+                );
+            jobEle = $('.work-entry:last');//Only get wrapper element once
+            jobEle.append(fmtEmployer + formattedHtml);
 
-    for (jobNum = 0; jobNum < work.jobs.length; jobNum += 1) {
+            formattedHtml = HTMLworkLocation.replace(PLC_HLD,
+                work.jobs[jobNum].location || 'no location'
+                );
+            jobEle.append(formattedHtml);
 
-        // Create (div) wrapper to hold details for single job
-        $('#workExperience').append(HTMLworkStart);
+            formattedHtml = HTMLworkDates.replace(PLC_HLD,
+                work.jobs[jobNum].dates || 'no dates'
+                );
+            jobEle.append(formattedHtml);
 
-        fmtEmployer = HTMLworkEmployer.replace(PLC_HLD,
-            work.jobs[jobNum].employer || 'no employer'
-            );
-        formattedHtml = HTMLworkTitle.replace(PLC_HLD,
-            work.jobs[jobNum].title || 'no title'
-            );
-        jobEle = $('.work-entry:last');//Only get wrapper element once
-        jobEle.append(fmtEmployer + formattedHtml);
+            formattedHtml = HTMLworkDescription.replace(PLC_HLD,
+                work.jobs[jobNum].description || 'no description'
+                );
+            jobEle.append(formattedHtml);
+        }// ./for
 
-        formattedHtml = HTMLworkLocation.replace(PLC_HLD,
-            work.jobs[jobNum].location || 'no location'
-            );
-        jobEle.append(formattedHtml);
+        if ($.isPlainObject(work.config)) {
+            // The JSON data includes some exta display configration information.
+            // Provide some extra supporting user controls
+            work.config.build = appData.controls.buildPageable;
+            appData.controls.addBlockControls('#workExperience', work.config);
+        }
+    };// ./root.work.display(work)
 
-        formattedHtml = HTMLworkDates.replace(PLC_HLD,
-            work.jobs[jobNum].dates || 'no dates'
-            );
-        jobEle.append(formattedHtml);
-
-        formattedHtml = HTMLworkDescription.replace(PLC_HLD,
-            work.jobs[jobNum].description || 'no description'
-            );
-        jobEle.append(formattedHtml);
-    }// ./for
-
-    if ($.isPlainObject(work.config)) {
-        // The JSON data includes some exta display configration information.
-        // Provide some extra supporting user controls
-        work.config.build = appData.controls.buildPageable;
-        appData.controls.addBlockControls('#workExperience', work.config);
-    }
-};// ./appData.work.display(work)
-
-
-/**
- * Add the project information to the web page
- *
- * @param  {object} work work experience information
- * @return {undefined}
- */
-appData.projects.display = function (projects) {
-    'use strict';
-    var PLC_HLD;
-    PLC_HLD = appData.CONST.DATA_PLACEHOLDER;//for nested functions
-
-    if (!($.isPlainObject(projects) && $.isArray(projects.projects))) {
-        //Major problem. This is not going to work, no practical runtime recovery
-        return false;
-    }
 
     /**
-     * Add all details for a single project to the résumé web page
-     * @param {object} projectObject Object with properties holding project
-     *                               details
+     * Add the project information to the web page
+     *
+     * @param  {object} work work experience information
      * @return {undefined}
      */
-    function addOneProject(projectObject) {
-        /*global HTMLprojectStart, HTMLprojectTitle, HTMLprojectDates,
-            HTMLprojectDescription, HTMLprojectImage */
-        var prjEle, img, formattedHtml;
-        $('#projects').append(HTMLprojectStart);
-        prjEle = $('.project-entry:last');//The just added project wrapper element
+    root.projects.display = function (projects) {
+        var PLC_HLD;
+        PLC_HLD = appData.CONST.DATA_PLACEHOLDER;//for nested functions
 
-        formattedHtml = HTMLprojectTitle.replace(PLC_HLD,
-            projectObject.title || 'no project title'
-            );
-        prjEle.append(formattedHtml);
+        if (!($.isPlainObject(projects) && $.isArray(projects.projects))) {
+            //Major problem. This is not going to work, no practical runtime recovery
+            return false;
+        }
 
-        formattedHtml = HTMLprojectDates.replace(PLC_HLD,
-            projectObject.dates || 'no project dates'
-            );
-        prjEle.append(formattedHtml);
+        /**
+         * Add all details for a single project to the résumé web page
+         * @param {object} projectObject Object with properties holding project
+         *                               details
+         * @return {undefined}
+         */
+        function addOneProject(projectObject) {
+            /*global HTMLprojectStart, HTMLprojectTitle, HTMLprojectDates,
+                HTMLprojectDescription, HTMLprojectImage */
+            var prjEle, img, formattedHtml;
+            $('#projects').append(HTMLprojectStart);
+            prjEle = $('.project-entry:last');//The just added project wrapper element
 
-        formattedHtml = HTMLprojectDescription.replace(PLC_HLD,
-            projectObject.description || 'no project description'
-            );
-        prjEle.append(formattedHtml);
-
-        for (img = 0; img < projectObject.images.length; img += 1) {
-            formattedHtml = HTMLprojectImage.replace(PLC_HLD,
-                projectObject.images[img]
+            formattedHtml = HTMLprojectTitle.replace(PLC_HLD,
+                projectObject.title || 'no project title'
                 );
             prjEle.append(formattedHtml);
-            // TODO: Add generic alt attribute for each image based on proj title
-            // and img (sequence number)
-        }
-    }// ./addOneProject(projectObject)
 
-    projects.projects.forEach(addOneProject);
-};// ./appData.projects.display(projects)
+            formattedHtml = HTMLprojectDates.replace(PLC_HLD,
+                projectObject.dates || 'no project dates'
+                );
+            prjEle.append(formattedHtml);
 
+            formattedHtml = HTMLprojectDescription.replace(PLC_HLD,
+                projectObject.description || 'no project description'
+                );
+            prjEle.append(formattedHtml);
 
-/**
- * Add the education information to the web page
- *
- * @param  {object} education shools and other education sources
- * @return {undefined}
- */
-appData.education.display = function (education) {
-    'use strict';
-    var formattedHtml, PLC_HLD;//(also) for nested functions
-    PLC_HLD = appData.CONST.DATA_PLACEHOLDER;//for nested functions
+            for (img = 0; img < projectObject.images.length; img += 1) {
+                formattedHtml = HTMLprojectImage.replace(PLC_HLD,
+                    projectObject.images[img]
+                    );
+                prjEle.append(formattedHtml);
+                // TODO: Add generic alt attribute for each image based on proj title
+                // and img (sequence number)
+            }
+        }// ./addOneProject(projectObject)
 
-    if (!($.isPlainObject(education) && $.isArray(education.schools))) {
-        //Major problem. This is not going to work, no practical runtime recovery
-        return false;
-    }
+        projects.projects.forEach(addOneProject);
+    };// ./root.projects.display(projects)
+
 
     /**
-     * Add all details for a single school to the page
-     * @param {object} schoolObject Object with properties holding school details
+     * Add the education information to the web page
+     *
+     * @param  {object} education shools and other education sources
      * @return {undefined}
      */
-    function addOneSchool(schoolObject) {
-        /*global HTMLschoolStart, HTMLschoolName, HTMLschoolLocation,
-            HTMLschoolDates, HTMLschoolDegree, HTMLschoolMajor */
-        var eduEle, mjr;
-        $('#education').append(HTMLschoolStart);
-        eduEle = $('.education-entry').last();//The just added wrapper element
+    root.education.display = function (education) {
+        var formattedHtml, PLC_HLD;//(also) for nested functions
+        PLC_HLD = appData.CONST.DATA_PLACEHOLDER;//for nested functions
 
-        formattedHtml = HTMLschoolName.replace(PLC_HLD,
-            schoolObject.name || 'no school name'
-            );
-        eduEle.append(formattedHtml);
+        if (!($.isPlainObject(education) && $.isArray(education.schools))) {
+            //Major problem. This is not going to work, no practical runtime recovery
+            return false;
+        }
 
-        formattedHtml = HTMLschoolLocation.replace(PLC_HLD,
-            schoolObject.location || 'no school location'
-            );
-        eduEle.append(formattedHtml);
+        /**
+         * Add all details for a single school to the page
+         * @param {object} schoolObject Object with properties holding school details
+         * @return {undefined}
+         */
+        function addOneSchool(schoolObject) {
+            /*global HTMLschoolStart, HTMLschoolName, HTMLschoolLocation,
+                HTMLschoolDates, HTMLschoolDegree, HTMLschoolMajor */
+            var eduEle, mjr;
+            $('#education').append(HTMLschoolStart);
+            eduEle = $('.education-entry').last();//The just added wrapper element
 
-        formattedHtml = HTMLschoolDates.replace(PLC_HLD,
-            schoolObject.dates || 'no dates'
-            );
-        eduEle.append(formattedHtml);
+            formattedHtml = HTMLschoolName.replace(PLC_HLD,
+                schoolObject.name || 'no school name'
+                );
+            eduEle.append(formattedHtml);
 
-        formattedHtml = HTMLschoolDegree.replace(PLC_HLD,
-            schoolObject.degree || 'no degree specified'
-            );
-        eduEle.append(formattedHtml);
+            formattedHtml = HTMLschoolLocation.replace(PLC_HLD,
+                schoolObject.location || 'no school location'
+                );
+            eduEle.append(formattedHtml);
 
-        if ($.isArray(schoolObject.majors)) {
-            for (mjr = 0; mjr < schoolObject.majors.length; mjr += 1) {
-                formattedHtml = HTMLschoolMajor.replace(PLC_HLD,
-                    schoolObject.majors[mjr]
-                    );
-                eduEle.append(formattedHtml);
-            }// ./for
-        }// ./($.isArray(schoolObject.majors))
-    }// ./addOneSchool(schoolObject)
+            formattedHtml = HTMLschoolDates.replace(PLC_HLD,
+                schoolObject.dates || 'no dates'
+                );
+            eduEle.append(formattedHtml);
 
-    education.schools.forEach(addOneSchool);
-};// ./appData.education.display(education)
+            formattedHtml = HTMLschoolDegree.replace(PLC_HLD,
+                schoolObject.degree || 'no degree specified'
+                );
+            eduEle.append(formattedHtml);
 
+            if ($.isArray(schoolObject.majors)) {
+                for (mjr = 0; mjr < schoolObject.majors.length; mjr += 1) {
+                    formattedHtml = HTMLschoolMajor.replace(PLC_HLD,
+                        schoolObject.majors[mjr]
+                        );
+                    eduEle.append(formattedHtml);
+                }// ./for
+            }// ./($.isArray(schoolObject.majors))
+        }// ./addOneSchool(schoolObject)
+
+        education.schools.forEach(addOneSchool);
+    };// ./root.education.display(education)
+};// ./appData.initialize(root)
 
 /**
  * Return the internationaized version of a full name
@@ -622,7 +613,7 @@ appData.app = {};
 appData.app.build = function (root) {
     'use strict';
     var ctl, isNonEmptyObject, locateEventControl, getControlFunction,
-        toggleControls, processPageUp, buildPageState;
+        toggleControls, processPageUp, processPageDown, buildPageState;
 
     // Common functions to support controls
     root.controls = {};
@@ -881,6 +872,66 @@ appData.app.build = function (root) {
     };// ./buildPageState(ctlEle, blkConfig)
 
     /**
+     * Back up the display for the controlled section by one page
+     *
+     * Hide the currently displayed rows, and show the previous rows based on
+     * the configured page size.
+     *
+     * @param  {jQueryElement} ctlEle    Root control for the current block
+     * @return {undefined}
+     */
+    processPageUp = function (ctlEle) {
+        var pgState, showStart, showEnd, hideStart, hideEnd;
+
+        pgState = buildPageState(ctlEle);
+        if (pgState.state !== appData.CONST.FINAL_STATE) {
+            throw new ReferenceError('page up references invalid page data');
+        }
+
+        //Get values for slice ranges: end is one higher than actually used
+        //This logic handles the case where pgState.overflow rows are currently
+        // shown at the start of the data, but reducing that to pgState.pageLimit
+        // rows.
+        showStart = pgState.pageTop - pgState.pageLimit;// One page backward
+        if (pgState.pageTop < pgState.overflow) {
+            //Include orphan rows just before the start of the new page
+            showStart = 0;
+        }
+        if (showStart < 0) {
+            //In case paging operations code got out of sync with page size
+            showStart = 0;
+        }
+        showEnd = showStart + pgState.pageLimit;//rows for one normal page
+        if (showEnd < pgState.pageTop) {
+            //In case start ajusted to prevent orphan, make sure not to skip
+            //rows just before the start of the current page
+            showEnd = pgState.PageTop;
+        }
+        if (pgState.rowCount <= pgState.overflow) {
+            //When only one page of data, including the overflow
+            showEnd = pgState.rowCount;
+        }
+        if (showEnd > pgState.rowCount) {
+            //Make sure not to go past the end of the available data
+            showEnd = pgState.rowCount;
+        }
+        hideStart = pgState.pageTop;//The limits for the current page
+        hideEnd = pgState.pageEnd + 1;
+        if (hideStart < showEnd) {
+            //Do not hide rows that are just going to be shown again
+            hideStart = showEnd;
+        }
+
+        // Hide the rows for the current page, and show them for the previous one.
+        if (hideEnd > hideStart) {
+            pgState.allRows.slice(hideStart, hideEnd).
+                addClass(appData.CONST.ROW_HIDE);
+        }
+        pgState.allRows.slice(showStart, showEnd).
+            removeClass(appData.CONST.ROW_HIDE);
+    };// ./processPageUp(ctlEle)
+
+    /**
      * Advance the display for the controlled section by one page
      *
      * Hide the currently displayed rows, and show the following rows based on
@@ -892,15 +943,14 @@ appData.app.build = function (root) {
      * - configuration setting?
      *
      * @param  {jQueryElement} ctlEle    Root control for the current block
-     * @param  {object}        blkConfig Configuration for control block
      * @return {undefined}
      */
-    processPageUp = function (ctlEle) {
+    processPageDown = function (ctlEle) {
         var pgState, hideEnd, showEnd;
 
         pgState = buildPageState(ctlEle);
         if (pgState.state !== appData.CONST.FINAL_STATE) {
-            throw new ReferenceError('page up references invalid page data');
+            throw new ReferenceError('page down references invalid page data');
         }
 
         // Safety net: should never hit this, if control is properly disabled
@@ -929,7 +979,7 @@ appData.app.build = function (root) {
             addClass(appData.CONST.ROW_HIDE);
         pgState.allRows.slice(hideEnd, showEnd).
             removeClass(appData.CONST.ROW_HIDE);
-    };// ./processPageUp(ctlEle, blkConfig)
+    };// ./processPageDown(ctlEle)
 
 
     /////////////////////////////////////////////////////////////////////
@@ -956,32 +1006,25 @@ appData.app.build = function (root) {
      * @return {undefined}
      */
     ctl.resetBlock = function (controlRoot) {
-        var controlEle, rowSelector, rowEles, totalRows, blockConfig,
-            blockOverflow, blockPageLimit;
+        var controlEle, blockConfig, pageConfig;
         controlEle = $(controlRoot);// control block wrapper
         // get block configuration settings, or default to an empty objectd
         blockConfig = controlEle.data().config || {};
         if (typeof blockConfig.rowSelector === 'string') {
             // A (potentially) pageable block
-            // TODO: refactor to use the common function
-            //pageConfig = buildPageState(ctlEle, blkConfig);
-            rowSelector = blockConfig.rowSelector; //tag for line/row in 'page'
-            rowEles = controlEle.parent().children(rowSelector);//populated rows
-            totalRows = rowEles.length;
+            pageConfig = buildPageState(controlEle);
 
             // Get or set default for full page length (no next page), and row
             // limit when there are more pages.
-            blockOverflow = blockConfig.overflow || totalRows;
-            blockPageLimit = blockConfig.pageLimit || blockOverflow;
-            if (totalRows > blockOverflow) {
+            if (pageConfig.rowCount > pageConfig.overflow) {
                 //Setup to show only the first page worth of rows
-                rowEles.slice(0, blockPageLimit)
+                pageConfig.allRows.slice(0, pageConfig.pageLimit)
                     .removeClass(appData.CONST.ROW_HIDE);
-                rowEles.slice(blockPageLimit)
+                pageConfig.allRows.slice(pageConfig.pageLimit)
                     .addClass(appData.CONST.ROW_HIDE);
             } else {
                 //Few enough rows to display them all to start
-                rowEles.removeClass(appData.CONST.ROW_HIDE);
+                pageConfig.allRows.removeClass(appData.CONST.ROW_HIDE);
             }
         }
         // reset the control states too
@@ -1100,6 +1143,9 @@ appData.app.build = function (root) {
         case 1:
             processPageUp(ctlEle);
             break;
+        case 2:
+            processPageDown(ctlEle);
+            break;
         default:
             throw new RangeError('identified function was not processed');
         }
@@ -1135,6 +1181,8 @@ appData.app.initialize = function (root) {
     $('#main > div').removeClass(appData.CONST.SLEEP_CONTROL);
 };// ./app.initialize(root)
 
+//Load the résumé data into application storage
+appData.initialize(appData);
 appData.app.build(appData);// Create common resources needed by display functions
 appData.bio.display(appData.bio);
 appData.work.display(appData.work);
