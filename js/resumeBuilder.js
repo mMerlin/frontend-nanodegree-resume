@@ -45,7 +45,7 @@ appData.initialize = function () {
             "skype" :           "h.phil.duby",
             "email" :           "philduby@phriendly.net",
             "github" :          "mMerlin",
-            "twitter" :         "H. Phil Duby",
+            "twitter" :         "H Phil Duby",
             "location" :        "Calgary, AB, Canada",
             "postal" : {
                 "Country" :     "Canada",
@@ -58,7 +58,7 @@ appData.initialize = function () {
         },
         "welcomeMessage" :      "Thank-you for visiting my web page.",
         "skills" : [
-            "programming",
+            "too many programming languages to list",
             "analysis",
             "desktop support"
         ],
