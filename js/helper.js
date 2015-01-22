@@ -115,11 +115,12 @@ function logClicks(x, y) {
   console.log('x location: ' + x + '; y location: ' + y);
 }
 
-$(document).click(function (loc) {
-  'use strict';
-  //Pass the click coordinates, relative to the document, to the logging function
-  logClicks(loc.pageX, loc.pageY);
-});
+// TODO: Turn click logging back on
+// $(document).click(function (loc) {
+//   'use strict';
+//   //Pass the click coordinates, relative to the document, to the logging function
+//   logClicks(loc.pageX, loc.pageY);
+// });
 
 
 
