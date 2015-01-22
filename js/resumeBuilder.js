@@ -1,4 +1,4 @@
-/*jslint browser: true, devel: true, indent: 4, maxlen: 82 */
+/*jslint browser: true, devel: true, todo: true, indent: 4, maxlen: 82 */
 /*global $ */
 var appData;
 if (appData === undefined) {
@@ -610,7 +610,7 @@ appData.showMap = function () {
     'use strict';
     /*global googleMap */
     $('#mapDiv').append(googleMap);
-};
+};// ./appData.showMap()
 
 appData.app = {};
 /**
@@ -621,8 +621,8 @@ appData.app = {};
 appData.app.build = function (root) {
     'use strict';
     var ctl, PLC_HLD, isNonEmptyObject, locateEventControl, getControlFunction,
-        toggleControls, processPagePrevious, processPageNext, processPageAllRows,
-        processPageReset, buildPageState;
+        toggleControls, showUpdatedPage, processPagePrevious, processPageNext,
+        processPageAllRows, processPageReset, buildPageState;
     PLC_HLD = appData.CONST.DATA_PLACEHOLDER;
 
     // Common functions to support controls
@@ -858,6 +858,82 @@ appData.app.build = function (root) {
         return pageState;
     };// ./buildPageState(ctlEle)
 
+    showUpdatedPage = function (currentState, newStart) {
+        var showStart, showEnd;//hpd, hideStart, hideEnd;
+
+        //EDGE CASE: overflow = pageLimit + 1; rowCount = overflow + 2;
+        // newStart = 1; would be orphan at both ends, but using overflow goes
+        // over the overflow limit.
+
+        //Get values for the row slice ranges: end is one higher than actually
+        // used.
+        showStart = newStart;
+        if (showStart < 0) {
+            showStart = 0;
+        }
+        if (showStart > currentState.lastRow) {
+            // In case paged forward past the end of data
+            showStart = newStart - currentState.pageLimit;
+            /*
+            if (showStart < currentState.pageTop) {
+                // Go back to the same page again
+                showStart = currentState.pageTop;
+                // Really should be nothing to do for this case
+                // return;
+            }
+            */
+            if (showStart > currentState.lastRow) {
+                // In case 'far' past the end of data
+                showStart = currentState.rowCount - currentState.pageLimit;
+            }
+        }
+        // Get base (end) before checking overflow, to prevent skipping rows
+        // when adjusting to prevent orphans
+        showEnd = showStart + currentState.pageLimit;
+        if (showStart <= currentState.overflow - currentState.pageLimit) {
+            // Prevent orphan rows just before start of current page
+            showStart = 0;
+        }
+        if (showStart + currentState.overflow >= currentState.rowCount) {
+            // Prevent orphan rows just after the end of the current page
+            showEnd = currentState.rowCount;
+        }
+        if (showEnd > currentState.rowCount) {
+            showEnd = currentState.rowCount;
+        }
+        // LOGIC QUERY:
+        //If want to show a full page at the end of the document, reduce
+        //showStart to showEnd minus pageLimit|overflow when showEnd ===
+        //rowCount
+
+        /////////////////////////////
+        // Update the visible rows //
+        /////////////////////////////
+
+        /* 'simplest' would be to hide all rows, then unhide the showStart to
+           showEnd range.  Cleaner is to only hide any currently visible rows
+           that are not wanted in the resulting page, and only show any rows
+           that are not currently shown, but are needed.  The logic to do that
+           correctly based on the various start and end indicies is non-trival.
+           This is not 'efficient', but using the jquery .not() selector gives
+           a clean and accurate result. */
+
+        // Hide any currently visible rows that are not wanted on the new page.
+        currentState.allRows.
+            slice(currentState.pageTop, currentState.pageEnd + 1).//now visible
+            not(currentState.allRows.slice(showStart, showEnd)).// new visible
+            addClass(appData.CONST.ROW_HIDE);//hide rows
+
+        // Show any currently hidden rows that are wanted on the new page.
+        currentState.allRows.
+            slice(showStart, showEnd).//new visible
+            not(currentState.allRows.slice(
+                currentState.pageTop,
+                currentState.pageEnd + 1
+            )).// already visible
+            removeClass(appData.CONST.ROW_HIDE);//show rows
+    };// ./showUpdatedPage(currentState, newStart)
+
     /**
      * Back up the display for the controlled section by one page
      *
@@ -868,54 +944,15 @@ appData.app.build = function (root) {
      * @return {undefined}
      */
     processPagePrevious = function (ctlEle) {
-        var pgState, showStart, showEnd, hideStart, hideEnd;
+        var pgState;
 
         pgState = buildPageState(ctlEle);
         if (pgState.state !== appData.CONST.FINAL_STATE) {
             throw new ReferenceError('page up references invalid page data');
         }
 
-        //Get values for slice ranges: end is one higher than actually used
-        //This logic handles the case where pgState.overflow rows are currently
-        // shown at the start of the data, but reducing that to pgState.pageLimit
-        // rows.
-        showStart = pgState.pageTop - pgState.pageLimit;// One page backward
-        if (pgState.pageTop < pgState.overflow) {
-            //Include orphan rows just before the start of the new page
-            showStart = 0;
-        }
-        if (showStart < 0) {
-            //In case paging operations code got out of sync with page size
-            showStart = 0;
-        }
-        showEnd = showStart + pgState.pageLimit;//rows for one normal page
-        if (showEnd < pgState.pageTop) {
-            //In case start ajusted to prevent orphan, make sure not to skip
-            //rows just before the start of the current page
-            showEnd = pgState.PageTop;
-        }
-        if (pgState.rowCount <= pgState.overflow) {
-            //When only one page of data, including the overflow
-            showEnd = pgState.rowCount;
-        }
-        if (showEnd > pgState.rowCount) {
-            //Make sure not to go past the end of the available data
-            showEnd = pgState.rowCount;
-        }
-        hideStart = pgState.pageTop;//The limits for the current page
-        hideEnd = pgState.pageEnd + 1;
-        if (hideStart < showEnd) {
-            //Do not hide rows that are just going to be shown again
-            hideStart = showEnd;
-        }
-
-        // Hide the rows for the current page, and show them for the previous one.
-        if (hideEnd > hideStart) {
-            pgState.allRows.slice(hideStart, hideEnd).
-                addClass(appData.CONST.ROW_HIDE);
-        }
-        pgState.allRows.slice(showStart, showEnd).
-            removeClass(appData.CONST.ROW_HIDE);
+        // one page backward
+        showUpdatedPage(pgState, pgState.pageTop - pgState.pageLimit);
     };// ./processPagePrevious(ctlEle)
 
     /**
@@ -933,39 +970,15 @@ appData.app.build = function (root) {
      * @return {undefined}
      */
     processPageNext = function (ctlEle) {
-        var pgState, hideEnd, showEnd;
+        var pgState;
 
         pgState = buildPageState(ctlEle);
         if (pgState.state !== appData.CONST.FINAL_STATE) {
             throw new ReferenceError('page down references invalid page data');
         }
 
-        // Safety net: should never hit this, if control is properly disabled
-        if (pgState.pageEnd >= pgState.lastRow) {
-            //Already at the end of the page nothing to do
-            return;
-        }
-
-        //Get values for slice ranges: end is one higher than actually used
-        //hideStart = pgState.pageTop;
-        hideEnd = pgState.pageEnd + 1;//showStart = hideEnd;
-        showEnd = hideEnd + pgState.pageLimit;
-        if (hideEnd + pgState.overflow >= pgState.rowCount) {
-            //Prevent orphans at the end of the data
-            showEnd = pgState.rowCount;
-        }
-        if (showEnd > pgState.rowCount) {
-            showEnd = pgState.rowCount;
-        }
-        // LOGIC QUERY:
-        //If want to show a full page at the end of the document, set hideEnd
-        //to showEnd - pgState.rowCount (if that is less)
-
-        // Hide the rows for the current page, and show them for the next one.
-        pgState.allRows.slice(pgState.pageTop, hideEnd).
-            addClass(appData.CONST.ROW_HIDE);
-        pgState.allRows.slice(hideEnd, showEnd).
-            removeClass(appData.CONST.ROW_HIDE);
+        // one page forward
+        showUpdatedPage(pgState, pgState.pageEnd + 1);
     };// ./processPageNext(ctlEle)
 
     processPageAllRows = function (ctlEle) {
@@ -980,8 +993,10 @@ appData.app.build = function (root) {
 
         pgState.overflow = pgState.rowCount;
         pgState.pageLimit = pgState.rowCount;
-        pgState.allRows.removeClass(appData.CONST.ROW_HIDE);
-        // TODO: should hide controls for paging (not the reset or other config)
+
+        // first (only) page
+        showUpdatedPage(pgState, 0);
+        // TODO: should hide controls for paging (not reset or other config)
     };// ./processPageAllRows(ctlEle)
 
     /**
@@ -1000,9 +1015,8 @@ appData.app.build = function (root) {
         pgState.overflow = pgState.base.overflow;
         pgState.pageLimit = pgState.base.pageLimit;
 
-        //processGoFirstPage(ctlEle);
-        // TODO: implment processGoFirstPage(ctlEle)
-        // - logic for splice selection similar? to processPreviousPage()
+        // first page
+        showUpdatedPage(pgState, 0);
     };// ./processPageReset(ctlEle)
 
     /////////////////////////////////////////////////////////////////////
@@ -1143,7 +1157,7 @@ appData.app.build = function (root) {
         //  1) use css rules (and media queries)
         //  2) use js to [re]position on resize
         //      sub options as for fixed positioning
-    };// ./buildPageable(controlBlockWrapper)
+    };// ./buildPageable(controlBlockWrapper, options)
 
     /**
      * Handle all of the click events for all control function blocks
@@ -1202,7 +1216,6 @@ appData.app.build = function (root) {
         default:
             throw new RangeError('identified function was not processed');
         }
-
     };// ./baseClick(e)
     /*
         MouseEvent
