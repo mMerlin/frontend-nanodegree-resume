@@ -215,8 +215,8 @@ appData.initialize = function (root) {
         ],
         "config" : {
             "rowSelector" : '.work-entry',
-            "overflow" : 6,
-            "pageLimit" : 5,
+            "defaultOverflow" : 6,
+            "defaultPageLimit" : 5,
             "controlSet" : [
                 "pageReset",
                 "pageAllRows",
@@ -440,6 +440,7 @@ appData.initialize = function (root) {
             // The JSON data includes some exta display configration information.
             // Provide some extra supporting user controls
             work.config.build = appData.controls.buildPageable;
+
             appData.controls.addBlockControls('#workExperience', work.config);
         }
     };// ./root.work.display(work)
@@ -749,12 +750,12 @@ appData.app.build = function (root) {
             // up the next level
 
             //Use the embeded configuration information to figure out what to do
-            if (typeof pgState.rowSelector === 'string') {
-                console.log(pgState.rowSelector);
+            if (typeof pgState.base.rowSelector === 'string') {
+                console.log(pgState.base.rowSelector);
                 //Looks like paging controls may be needed.
                 // Get or set default for full page length (no next page), and
                 // row limit when there are more pages available.
-                if (pgState.rowCount > pgState.overflow) {
+                if (pgState.rowCount > pgState.base.overflow) {
                     // wake up the known paging controls
                     console.log('wake paging');
                     //Considered using an array in CONST to hold the list of
@@ -771,7 +772,7 @@ appData.app.build = function (root) {
                             removeClass(appData.CONST.SLEEP_CONTROL);
                     });
                     pgState.base.state = appData.CONST.PAGING;
-                } // else { !(pgState.rowCount > pgState.overflow)
+                } // else { !(pgState.rowCount > pgState.base.overflow)
                     // Too few rows to ever need any paging controls (with
                     // configured page size and overflow limits)
                 //}
@@ -797,41 +798,38 @@ appData.app.build = function (root) {
      * @return {object}           State information for the current page
      */
     buildPageState = function (ctlEle) {
-        var pageState, blkConfig, hiddenRows, row, visibleRows;
+        var pageState, hiddenRows, row, visibleRows;
         pageState = {};
         pageState.state = appData.CONST.START_STATE;
 
-        blkConfig = ctlEle.data().config;
-        if (!isNonEmptyObject(blkConfig)) {
+        pageState.base = ctlEle.data().config;
+        if (!isNonEmptyObject(pageState.base)) {
             throw new TypeError(
                 'No configuration data supplied for control element block'
             );
         }
 
-        pageState.base = blkConfig;
-        pageState.rowSelector = blkConfig.rowSelector;
-        if (typeof pageState.rowSelector !== 'string') {
+        if (typeof pageState.base.rowSelector !== 'string') {
             //pageState.state = appData.CONST.FINAL_STATE;
             //pageState.state = 'notpaging';
             return pageState;
         }
-        pageState.allRows = ctlEle.parent().children(pageState.rowSelector);
+        pageState.allRows = ctlEle.parent().children(pageState.base.rowSelector);
         pageState.rowCount = pageState.allRows.length;
         pageState.lastRow = pageState.rowCount - 1;
-        pageState.overflow = blkConfig.overflow || pageState.totalRows;
-        pageState.pageLimit = blkConfig.pageLimit || pageState.overflow;
-        //locate current page: first and last rows without ROW_HIDE class
+
+        //locate current displayed page: first and last rows without ROW_HIDE
         hiddenRows = pageState.allRows.filter('.' + appData.CONST.ROW_HIDE);
         visibleRows = pageState.rowCount - hiddenRows.length;
         if (visibleRows === pageState.rowCount) {
-            // All rows are hidden
-            // LOGIC QUERY: what if rowCount === 0 ?
-            pageState.pageTop = -1;
-            pageState.pageEnd = -1;
-        } else if (visibleRows === 0) {
             // All rows are visible
+            // LOGIC QUERY: what if rowCount === 0 ?
             pageState.pageTop = 0;
-            pageState.pageEnd = pageState.rowCount - 1;
+            pageState.pageEnd = pageState.lastRow;
+        } else if (visibleRows === 0) {
+            // All rows are Hidden
+            pageState.pageTop = 0;
+            pageState.pageEnd = 0;
         } else {
             // Some but not all rows are hidden: find the non-hidden block
             for (row = 0; row < pageState.rowCount; row += 1) {
@@ -859,7 +857,7 @@ appData.app.build = function (root) {
     };// ./buildPageState(ctlEle)
 
     showUpdatedPage = function (currentState, newStart) {
-        var showStart, showEnd;//hpd, hideStart, hideEnd;
+        var showStart, showEnd;
 
         //EDGE CASE: overflow = pageLimit + 1; rowCount = overflow + 2;
         // newStart = 1; would be orphan at both ends, but using overflow goes
@@ -873,7 +871,7 @@ appData.app.build = function (root) {
         }
         if (showStart > currentState.lastRow) {
             // In case paged forward past the end of data
-            showStart = newStart - currentState.pageLimit;
+            showStart = newStart - currentState.base.pageLimit;
             /*
             if (showStart < currentState.pageTop) {
                 // Go back to the same page again
@@ -884,17 +882,19 @@ appData.app.build = function (root) {
             */
             if (showStart > currentState.lastRow) {
                 // In case 'far' past the end of data
-                showStart = currentState.rowCount - currentState.pageLimit;
+                showStart = currentState.rowCount - currentState.base.pageLimit;
             }
         }
         // Get base (end) before checking overflow, to prevent skipping rows
         // when adjusting to prevent orphans
-        showEnd = showStart + currentState.pageLimit;
-        if (showStart <= currentState.overflow - currentState.pageLimit) {
+        showEnd = showStart + currentState.base.pageLimit;
+        if (showStart <=
+                currentState.base.overflow - currentState.base.pageLimit
+                ) {
             // Prevent orphan rows just before start of current page
             showStart = 0;
         }
-        if (showStart + currentState.overflow >= currentState.rowCount) {
+        if (showStart + currentState.base.overflow >= currentState.rowCount) {
             // Prevent orphan rows just after the end of the current page
             showEnd = currentState.rowCount;
         }
@@ -952,7 +952,7 @@ appData.app.build = function (root) {
         }
 
         // one page backward
-        showUpdatedPage(pgState, pgState.pageTop - pgState.pageLimit);
+        showUpdatedPage(pgState, pgState.pageTop - pgState.base.pageLimit);
     };// ./processPagePrevious(ctlEle)
 
     /**
@@ -981,6 +981,11 @@ appData.app.build = function (root) {
         showUpdatedPage(pgState, pgState.pageEnd + 1);
     };// ./processPageNext(ctlEle)
 
+    /**
+     * Configure to show all rows as a single page
+     * @param  {jQueryElement} ctlEle  Wrapper element for the control set
+     * @return {undefined}
+     */
     processPageAllRows = function (ctlEle) {
         var pgState;
 
@@ -991,8 +996,9 @@ appData.app.build = function (root) {
             );
         }
 
-        pgState.overflow = pgState.rowCount;
-        pgState.pageLimit = pgState.rowCount;
+        // Adjust page limits so all data fits on a single page
+        pgState.base.overflow = pgState.rowCount;
+        pgState.base.pageLimit = pgState.rowCount;
 
         // first (only) page
         showUpdatedPage(pgState, 0);
@@ -1012,8 +1018,9 @@ appData.app.build = function (root) {
             throw new ReferenceError('page reset references invalid page data');
         }
 
-        pgState.overflow = pgState.base.overflow;
-        pgState.pageLimit = pgState.base.pageLimit;
+        // Get the instance limits back to the base configuration values.
+        pgState.base.overflow = pgState.base.defaultOverflow;
+        pgState.base.pageLimit = pgState.base.defaultPageLimit;
 
         // first page
         showUpdatedPage(pgState, 0);
@@ -1051,18 +1058,11 @@ appData.app.build = function (root) {
             // A (potentially) pageable block
             pageConfig = buildPageState(controlEle);
 
-            // Get or set default for full page length (no next page), and row
-            // limit when there are more pages.
-            if (pageConfig.rowCount > pageConfig.overflow) {
-                //Setup to show only the first page worth of rows
-                pageConfig.allRows.slice(0, pageConfig.pageLimit)
-                    .removeClass(appData.CONST.ROW_HIDE);
-                pageConfig.allRows.slice(pageConfig.pageLimit)
-                    .addClass(appData.CONST.ROW_HIDE);
-            } else {
-                //Few enough rows to display them all to start
-                pageConfig.allRows.removeClass(appData.CONST.ROW_HIDE);
-            }
+            // [re]set runtime configuration options to the built in defaults
+            pageConfig.base.overflow = pageConfig.base.defaultOverflow;
+            pageConfig.base.pageLimit = pageConfig.base.defaultPageLimit;
+
+            showUpdatedPage(pageConfig, 0);
         }
         // reset the control states too
         // Hide everything except the activation symbol / marker / menu icon
@@ -1075,8 +1075,8 @@ appData.app.build = function (root) {
     };// ./resetBlock(controlRoot)
 
     /**
-     * Create a 'standard' block of user interaction controls, populated based
-     * on the provided options
+     * Create the DOM elements for a block of user interaction controls,
+     * populated based on the provided options
      * @param {selector} parentEle   jQuery Selector for root element of block
      *                               to add controls to
      * @param {object}   options     configuration information for the controls
@@ -1085,8 +1085,12 @@ appData.app.build = function (root) {
      */
     ctl.addBlockControls = function (parentEle, options) {
         var controlEle;
-        controlEle = $(appData.TEMPLATES.BLK_CONTROLS);//basic wrapper
-        options.build(controlEle, options, parentEle);//add needed controls
+
+        controlEle = $(appData.TEMPLATES.BLK_CONTROLS);//create basic wrapper
+        // Attach a clone of the options object to the wrapper element, to keep
+        // any (block instance specific) updates out of the source data
+        controlEle.data('config', $.extend(true, {}, options));
+        options.build(controlEle, parentEle);//add case specific cntrls
 
         //Add the main open menu control last, to position the control set at
         // the right edge, and 'open' it to the left.
@@ -1104,29 +1108,29 @@ appData.app.build = function (root) {
 
     /**
      * Create a 'standard' set of controls to handle paging of block contents
-     * @param  {[type]} controlBlockWrapper [description]
-     * @param  {[type]} options             [description]
+     * @param {jQueryElement} controlBlockWrapper
+     *                            wrapper element for block of controls
      * @return {undefined}
      *
      *  ../../Resume Controls.mm
      */
-    ctl.buildPageable = function (controlBlockWrapper, options) {//, scopeEle
-        var wrapperEle;
+    ctl.buildPageable = function (controlBlockWrapper) {//, scopeEle
+        var wrapperEle, setOptions;
 
         wrapperEle = $(controlBlockWrapper);
-        if (!$.isPlainObject(options)) {
+        setOptions = wrapperEle.data().config;
+        if (!$.isPlainObject(setOptions)) {
             throw new TypeError(
                 'No options supplied to build pageable control block'
             );
         }
-        wrapperEle.data('config', options);
 
         ////////////////////////////////////////////////
         // Individual control elements from templates //
         ////////////////////////////////////////////////
-        if ($.isArray(options.controlSet)) {
+        if ($.isArray(setOptions.controlSet)) {
             // Some control functions were specified
-            options.controlSet.forEach(function (ctlFunction) {
+            setOptions.controlSet.forEach(function (ctlFunction) {
                 var newCtl;
                 // Basic control menu item, with specific function filled in
                 newCtl = $(appData.TEMPLATES.CTL_MENU_ITEM.replace(
@@ -1157,7 +1161,7 @@ appData.app.build = function (root) {
         //  1) use css rules (and media queries)
         //  2) use js to [re]position on resize
         //      sub options as for fixed positioning
-    };// ./buildPageable(controlBlockWrapper, options)
+    };// ./buildPageable(controlBlockWrapper)
 
     /**
      * Handle all of the click events for all control function blocks
