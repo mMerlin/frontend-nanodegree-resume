@@ -8,11 +8,8 @@ if (appData === undefined) {
 //template information, for extension to the base project
 appData.TEMPLATES = {
     'BLK_CONTROLS' : '<section class="controls sleep"></section>',
-    'ARO_BUTTON' :
-        '<div class="aroCtl blockRoot"><div class="target"></div>' +
-        '<div class="inner"></div></div>',
-    'PAGE_UP' : '<div class="aroCtl arrow pageUp"></div>',
-    'PAGE_DOWN' : '<div class="aroCtl arrow pageDown"></div>'
+    'CTL_MENU_ITEM' : '<div class="ctlMenuItem %data%"></div>',
+    'CTL_NEST_ITEM' : '<span class="iconNested"></span>'
 };// ./appData.TEMPLATES
 appData.CONST = {};
 appData.CONST.DATA_PLACEHOLDER = '%data%'; //common replacement string
@@ -21,12 +18,29 @@ appData.CONST.WAKE_CONTROL = 'awake'; //css class; show controls as awake (hover
 appData.CONST.SLEEP_CONTROL = 'sleep'; //css class; hide unavailable controls
 appData.CONST.COLLAPSED = 'closed';//control block state collapsed/closed state
 appData.CONST.PAGING = 'paging';//control block has [some] page management active
-appData.CONST.CONTROL_TAG = 'aroCtl';//tag to identify control elements
-appData.CONST.CONTROL_FUNCTIONS = [//based on css class tag
-    'blockRoot',
-    'pageUp',
-    'pageDown'
+appData.CONST.CONTROL_TAG = 'ctlMenuItem';//tag to identify control elements
+appData.CONST.CONTROL_SELECTOR = '.' + appData.CONST.CONTROL_TAG;
+appData.CONST.MENU_TAG = 'menuOpenClose';
+appData.CONST.MENU_SELECTOR = '.' + appData.CONST.MENU_TAG;
+appData.CONST.CONTROL_FUNCTIONS = [//based on css class tags
+    'menuOpenClose',
+    'pagePrevious',
+    'pageNext',
+    'pageAllRows',
+    'pageReset'
 ];
+appData.CONST.NESTED_CONTROLS = [//icons needing nested element for css graphics
+    'pageAllRows'
+];
+/*
+    'pageFirst',
+    'pageLast',
+    'pageIncrease',//more rows in page
+    'pageDecrease',//less rows in page
+    'pageAll',//all rows as single page
+    'pageLess',//fewer details
+    'pageMore',//More details
+*/
 appData.CONST.START_STATE = 'working';//Page state analysis started
 appData.CONST.FINAL_STATE = 'complete';//Page state analysis started
 appData.CONST.ERROR_STATE = 'error';//Page state analysis started
@@ -204,19 +218,13 @@ appData.initialize = function (root) {
             "overflow" : 6,
             "pageLimit" : 5,
             "controlSet" : [
-                "PAGE_UP",
-                "PAGE_DOWN"
+                "pageReset",
+                "pageAllRows",
+                "pagePrevious",
+                "pageNext"
             ]
         }
     };// ./root.work
-    //.FULL_PAGE
-    //.TOP_OF_PAGE
-    //.END_OF_PAGE
-    //.MORE_ROWS
-    //.LESS_ROWS
-    //.RESET_PAGE
-    //.MORE_DETAILS
-    //.LESS_DETAILS
     //resume controls.mm
 
 
@@ -612,8 +620,10 @@ appData.app = {};
  */
 appData.app.build = function (root) {
     'use strict';
-    var ctl, isNonEmptyObject, locateEventControl, getControlFunction,
-        toggleControls, processPageUp, processPageDown, buildPageState;
+    var ctl, PLC_HLD, isNonEmptyObject, locateEventControl, getControlFunction,
+        toggleControls, processPagePrevious, processPageNext, processPageAllRows,
+        processPageReset, buildPageState;
+    PLC_HLD = appData.CONST.DATA_PLACEHOLDER;
 
     // Common functions to support controls
     root.controls = {};
@@ -719,32 +729,32 @@ appData.app.build = function (root) {
      * @return {undefined}
      */
     toggleControls = function (ctlEle) {
-        var blkConfig, rowEles, blockOverflow, pageGroup;
-        blkConfig = ctlEle.data().config;
-        if (!isNonEmptyObject(blkConfig)) {
-            throw new TypeError(
-                'No configuration data supplied for control element block'
+        var pgState, pageGroup;
+        // LOGIC QUERY: should buildPageState() be:
+        //   buildControlState? buildControlSetState?
+        pgState = buildPageState(ctlEle);
+        if (pgState.state !== appData.CONST.FINAL_STATE) {
+            // non paging would be valid here too, but no case for now
+            throw new ReferenceError(
+                'toggle controls references invalid page data'
             );
         }
 
         //Use the current state to decide whether need to show or hide controls
-        blkConfig.state = blkConfig.state ||
+        pgState.base.state = pgState.base.state ||
             appData.CONST.COLLAPSED;//Initialize when state does not yet exist
-        if (blkConfig.state === appData.CONST.COLLAPSED) {
+        if (pgState.base.state === appData.CONST.COLLAPSED) {
             console.log('open controls');
             // Only the root of the control set is currently being shown: Open
             // up the next level
 
             //Use the embeded configuration information to figure out what to do
-            if (typeof blkConfig.rowSelector === 'string') {
-                console.log(blkConfig.rowSelector);
+            if (typeof pgState.rowSelector === 'string') {
+                console.log(pgState.rowSelector);
                 //Looks like paging controls may be needed.
-                rowEles = $(blkConfig.rowSelector);
                 // Get or set default for full page length (no next page), and
                 // row limit when there are more pages available.
-                blockOverflow = blkConfig.overflow || rowEles.length;
-                //blockPageLimit = blkConfig.pageLimit || blockOverflow;
-                if (rowEles.length > blockOverflow) {
+                if (pgState.rowCount > pgState.overflow) {
                     // wake up the known paging controls
                     console.log('wake paging');
                     //Considered using an array in CONST to hold the list of
@@ -752,67 +762,38 @@ appData.app.build = function (root) {
                     // logic is going to manage which controls to display based
                     // on the actual data.  Use a local array instead that can
                     // be populated programmatically (just) before getting here.
-                    pageGroup = ['.pageUp', '.pageDown'];
+                    // LOGIC QUERY: ? replace class selectors with CONST
+                    //   references?
+                    pageGroup = ['.pagePrevious', '.pageNext', '.pageAllRows',
+                        '.pageReset'];
                     pageGroup.forEach(function (mask) {
                         ctlEle.children(mask).
                             removeClass(appData.CONST.SLEEP_CONTROL);
                     });
-                    blkConfig.state = appData.CONST.PAGING;
-                } // else { !(rowEles.length > blockOverflow)
-                    // Too few rows to ever need any paging controls
+                    pgState.base.state = appData.CONST.PAGING;
+                } // else { !(pgState.rowCount > pgState.overflow)
+                    // Too few rows to ever need any paging controls (with
+                    // configured page size and overflow limits)
                 //}
                 // TODO: controls to show more or less details, hide all show all
                 // another section of the configiration object?
-            }// ./if (typeof blkConfig.rowSelector === 'string')
-        } else { // !(blkConfig.state === 'closed')
+            }// ./if (typeof pgState.base.rowSelector === 'string')
+        } else { // !(pgState.base.state === 'closed')
             console.log('close controls');
-            // The root was clicked with other controls open; close all of the
-            // child controls in the set, except for the first / root controld
-            ctlEle.children('.aroCtl').slice(1).
+            // The menu icon was clicked with other controls open; close all of
+            // the child controls in the set, except for the menu control itself.
+            ctlEle.children(appData.CONST.CONTROL_SELECTOR).
+                not(appData.CONST.MENU_SELECTOR).
                 addClass(appData.CONST.SLEEP_CONTROL);
-            blkConfig.state = appData.CONST.COLLAPSED;
-        }// ./else !(blkConfig.state === 'closed')
-        /*
-            MouseEvent
-            click
-            currentTarget:
-                wrong target: currently the wrapper for the controls block
-                this 'works' because all of the other controls are hidden
-            delegateTarget: div#main
-            handleObj
-                namespace
-                selector
-                type
-            originalEvent: browser native event object
-                dataTransfer: for drag and drop?
-            relatedTarget: null ?toElement|fromElement for mouseout|mouseover
-            target: the child? for current target the first saw the event?
-            timeStamp
-            toElement: the element the mouse moved to (mouseout)
-            view
-            modifier keys
-                altKey
-                ctrlKey
-                metaKey
-                shiftKey
-            mouse coordinates
-                clientX: relative to browser left edge (os border?)
-                clientY
-                offsetX: within currentTarget
-                offsetY
-                pageX: relative to scrollable top of page
-                pageY
-                screenX: OS viewport?
-                screenY
-        */
-    };// ./toggleControls(ctlEle, blkConfig)
+            pgState.base.state = appData.CONST.COLLAPSED;
+        }// ./else !(pgState.base.state === 'closed')
+    };// ./toggleControls(ctlEle)
 
     /**
      * Collect state information for the [pseudo] page associated with the
      * control block
      *
      * @param  {Element} ctlEle   wrapper jQuery element for the control block
-     * @param  {object} blkConfig configuration settings for the current page
      * @return {object}           State information for the current page
      */
     buildPageState = function (ctlEle) {
@@ -827,7 +808,13 @@ appData.app.build = function (root) {
             );
         }
 
+        pageState.base = blkConfig;
         pageState.rowSelector = blkConfig.rowSelector;
+        if (typeof pageState.rowSelector !== 'string') {
+            //pageState.state = appData.CONST.FINAL_STATE;
+            //pageState.state = 'notpaging';
+            return pageState;
+        }
         pageState.allRows = ctlEle.parent().children(pageState.rowSelector);
         pageState.rowCount = pageState.allRows.length;
         pageState.lastRow = pageState.rowCount - 1;
@@ -869,7 +856,7 @@ appData.app.build = function (root) {
         pageState.state = appData.CONST.FINAL_STATE;
 
         return pageState;
-    };// ./buildPageState(ctlEle, blkConfig)
+    };// ./buildPageState(ctlEle)
 
     /**
      * Back up the display for the controlled section by one page
@@ -880,7 +867,7 @@ appData.app.build = function (root) {
      * @param  {jQueryElement} ctlEle    Root control for the current block
      * @return {undefined}
      */
-    processPageUp = function (ctlEle) {
+    processPagePrevious = function (ctlEle) {
         var pgState, showStart, showEnd, hideStart, hideEnd;
 
         pgState = buildPageState(ctlEle);
@@ -929,7 +916,7 @@ appData.app.build = function (root) {
         }
         pgState.allRows.slice(showStart, showEnd).
             removeClass(appData.CONST.ROW_HIDE);
-    };// ./processPageUp(ctlEle)
+    };// ./processPagePrevious(ctlEle)
 
     /**
      * Advance the display for the controlled section by one page
@@ -942,10 +929,10 @@ appData.app.build = function (root) {
      * - add enough rows from previous data to fill the page
      * - configuration setting?
      *
-     * @param  {jQueryElement} ctlEle    Root control for the current block
+     * @param  {jQueryElement} ctlEle  Wrapper element for the control set
      * @return {undefined}
      */
-    processPageDown = function (ctlEle) {
+    processPageNext = function (ctlEle) {
         var pgState, hideEnd, showEnd;
 
         pgState = buildPageState(ctlEle);
@@ -979,8 +966,44 @@ appData.app.build = function (root) {
             addClass(appData.CONST.ROW_HIDE);
         pgState.allRows.slice(hideEnd, showEnd).
             removeClass(appData.CONST.ROW_HIDE);
-    };// ./processPageDown(ctlEle)
+    };// ./processPageNext(ctlEle)
 
+    processPageAllRows = function (ctlEle) {
+        var pgState;
+
+        pgState = buildPageState(ctlEle);
+        if (pgState.state !== appData.CONST.FINAL_STATE) {
+            throw new ReferenceError(
+                'show all page rows references invalid page data'
+            );
+        }
+
+        pgState.overflow = pgState.rowCount;
+        pgState.pageLimit = pgState.rowCount;
+        pgState.allRows.removeClass(appData.CONST.ROW_HIDE);
+        // TODO: should hide controls for paging (not the reset or other config)
+    };// ./processPageAllRows(ctlEle)
+
+    /**
+     * Set the page configuration back to the defaults
+     * @param  {jQueryElement} ctlEle  Wrapper element for the control set
+     * @return {undefined}
+     */
+    processPageReset = function (ctlEle) {
+        var pgState;
+
+        pgState = buildPageState(ctlEle);
+        if (pgState.state !== appData.CONST.FINAL_STATE) {
+            throw new ReferenceError('page reset references invalid page data');
+        }
+
+        pgState.overflow = pgState.base.overflow;
+        pgState.pageLimit = pgState.base.pageLimit;
+
+        //processGoFirstPage(ctlEle);
+        // TODO: implment processGoFirstPage(ctlEle)
+        // - logic for splice selection similar? to processPreviousPage()
+    };// ./processPageReset(ctlEle)
 
     /////////////////////////////////////////////////////////////////////
     // Exported functions accessable outside the current closure scope //
@@ -1028,11 +1051,12 @@ appData.app.build = function (root) {
             }
         }
         // reset the control states too
-        // Hide everything except the activation symbol / marker / icon
-        controlEle.children().slice(1).addClass(appData.CONST.SLEEP_CONTROL);
-        controlEle.children().first().removeClass(appData.CONST.SLEEP_CONTROL);
+        // Hide everything except the activation symbol / marker / menu icon
+        controlEle.children().addClass(appData.CONST.SLEEP_CONTROL);
+        controlEle.children(appData.CONST.MENU_SELECTOR).
+            removeClass(appData.CONST.SLEEP_CONTROL);
         // The wrapper is created 'sleeping' to avoid some flicker, so need to
-        // wake it up (at least) the first time
+        // wake it up (at least) the first time.
         controlEle.removeClass(appData.CONST.SLEEP_CONTROL);
     };// ./resetBlock(controlRoot)
 
@@ -1048,8 +1072,18 @@ appData.app.build = function (root) {
     ctl.addBlockControls = function (parentEle, options) {
         var controlEle;
         controlEle = $(appData.TEMPLATES.BLK_CONTROLS);//basic wrapper
-        controlEle.append(appData.TEMPLATES.ARO_BUTTON);//root control for block
         options.build(controlEle, options, parentEle);//add needed controls
+
+        //Add the main open menu control last, to position the control set at
+        // the right edge, and 'open' it to the left.
+        //Do this here, instead of inside the referenced options.build()
+        // function, so that multple generic 'builds' can be done, and still
+        // always get the top control last and only once.
+        controlEle.append(appData.TEMPLATES.CTL_MENU_ITEM.replace(
+            PLC_HLD,
+            appData.CONST.MENU_TAG
+        ));
+
         // Insert the populated wrapper as the first child of the parent
         $(parentEle).prepend(controlEle);
     };// ./addBlockControls(parentEle, options)
@@ -1063,7 +1097,9 @@ appData.app.build = function (root) {
      *  ../../Resume Controls.mm
      */
     ctl.buildPageable = function (controlBlockWrapper, options) {//, scopeEle
-        var wrapperEle = $(controlBlockWrapper);
+        var wrapperEle;
+
+        wrapperEle = $(controlBlockWrapper);
         if (!$.isPlainObject(options)) {
             throw new TypeError(
                 'No options supplied to build pageable control block'
@@ -1071,13 +1107,23 @@ appData.app.build = function (root) {
         }
         wrapperEle.data('config', options);
 
-        ///////////////////////////////////////////////
-        //Individual control elements from templates //
-        ///////////////////////////////////////////////
+        ////////////////////////////////////////////////
+        // Individual control elements from templates //
+        ////////////////////////////////////////////////
         if ($.isArray(options.controlSet)) {
-            //Some control templates were specified
-            options.controlSet.forEach(function (ctlTemplate) {
-                wrapperEle.append(appData.TEMPLATES[ctlTemplate]);
+            // Some control functions were specified
+            options.controlSet.forEach(function (ctlFunction) {
+                var newCtl;
+                // Basic control menu item, with specific function filled in
+                newCtl = $(appData.TEMPLATES.CTL_MENU_ITEM.replace(
+                    PLC_HLD,
+                    ctlFunction
+                ));
+                if (appData.CONST.NESTED_CONTROLS.indexOf(ctlFunction) >= 0) {
+                    // Child element (only) for controls that have more graphics
+                    newCtl.append(appData.TEMPLATES.CTL_NEST_ITEM);
+                }
+                wrapperEle.append(newCtl);// Complete control icon
             });
         }
 
@@ -1122,7 +1168,8 @@ appData.app.build = function (root) {
         //For css control graphics, the set of classes is going have to be
         //unique, as long as the visual image for each control is unique.
         //That does not mean that a single class is enough to be unique, so
-        //be careful.  EG: "arrow pageup", "text pageup"
+        //be careful.  EG: "ctlMenuItem pagePrevious",
+        //"textMenuItem pagePrevious"
         ctlTarget = locateEventControl(e);
         //ctlFunction = getControlFunction(ctlTarget); //only if need more
         ctlFunction = getControlFunction(ctlTarget.attr('class'));
@@ -1141,16 +1188,55 @@ appData.app.build = function (root) {
             toggleControls(ctlEle);
             break;
         case 1:
-            processPageUp(ctlEle);
+            processPagePrevious(ctlEle);
             break;
         case 2:
-            processPageDown(ctlEle);
+            processPageNext(ctlEle);
+            break;
+        case 3:
+            processPageAllRows(ctlEle);
+            break;
+        case 4:
+            processPageReset(ctlEle);
             break;
         default:
             throw new RangeError('identified function was not processed');
         }
 
     };// ./baseClick(e)
+    /*
+        MouseEvent
+        click
+        currentTarget:
+            wrong target: currently the wrapper for the controls block
+            this 'works' because all of the other controls are hidden
+        delegateTarget: div#main
+        handleObj
+            namespace
+            selector
+            type
+        originalEvent: browser native event object
+            dataTransfer: for drag and drop?
+        relatedTarget: null ?toElement|fromElement for mouseout|mouseover
+        target: the child? for current target the first saw the event?
+        timeStamp
+        toElement: the element the mouse moved to (mouseout)
+        view
+        modifier keys
+            altKey
+            ctrlKey
+            metaKey
+            shiftKey
+        mouse coordinates
+            clientX: relative to browser left edge (os border?)
+            clientY
+            offsetX: within currentTarget
+            offsetY
+            pageX: relative to scrollable top of page
+            pageY
+            screenX: OS viewport?
+            screenY
+    */
 };// ./appData.app.build(root)
 
 /**
@@ -1163,10 +1249,10 @@ appData.app.initialize = function (root) {
     var ctl = root.controls;
 
     //Setup event delegate handlers for the interactive controls
-    $('#main').on('mouseenter', '.aroCtl', function () {
+    $('#main').on('mouseenter', appData.CONST.CONTROL_SELECTOR, function () {
         $(this).addClass(appData.CONST.WAKE_CONTROL);
     });
-    $('#main').on('mouseleave', '.aroCtl', function () {
+    $('#main').on('mouseleave', appData.CONST.CONTROL_SELECTOR, function () {
         $(this).removeClass(appData.CONST.WAKE_CONTROL);
     });
     $('.controls').on('click.aro', ctl.baseClick);
