@@ -19,8 +19,9 @@ appData.CONST.SLEEP_CONTROL = 'sleep'; //css class; hide unavailable controls
 appData.CONST.COLLAPSED = 'closed';//control block state collapsed/closed state
 appData.CONST.PAGING = 'paging';//control block has [some] page management active
 appData.CONST.CONTROL_TAG = 'ctlMenuItem';//tag to identify control elements
-appData.CONST.CONTROL_SELECTOR = '.' + appData.CONST.CONTROL_TAG;
 appData.CONST.MENU_TAG = 'menuOpenClose';
+appData.CONST.SLEEP_SELECTOR = '.' + appData.CONST.SLEEP_CONTROL;
+appData.CONST.CONTROL_SELECTOR = '.' + appData.CONST.CONTROL_TAG;
 appData.CONST.MENU_SELECTOR = '.' + appData.CONST.MENU_TAG;
 appData.CONST.CONTROL_FUNCTIONS = [//based on css class tags
     'menuOpenClose',
@@ -622,8 +623,8 @@ appData.app = {};
 appData.app.build = function (root) {
     'use strict';
     var ctl, PLC_HLD, isNonEmptyObject, locateEventControl, getControlFunction,
-        toggleControls, showUpdatedPage, processPagePrevious, processPageNext,
-        processPageAllRows, processPageReset, buildPageState;
+        toggleControls, showActiveControls, showUpdatedPage, processPagePrevious,
+        processPageNext, processPageAllRows, processPageReset, buildPageState;
     PLC_HLD = appData.CONST.DATA_PLACEHOLDER;
 
     // Common functions to support controls
@@ -725,70 +726,85 @@ appData.app.build = function (root) {
     };// ./getControlFunction(ctlClass)
 
     /**
-     * Show initial, or hide all control functions for the block
-     * @param  {jQueryElement} ctlEle root element of control block
+     * Show active, or hide all control functions for the block
+     * @param  {jQueryElement} ctlEle wrapper element for control block
      * @return {undefined}
      */
     toggleControls = function (ctlEle) {
-        var pgState, pageGroup;
+        var visibleControls;
+
+        // If any controls (other than the menuOpenClose icon) are currently
+        // being shown, hide all of additional controls.  Otherwise, use the
+        // current (control set) data state and configuration to decide what
+        // controls should be shown.
+        visibleControls = ctlEle.children().
+            not(appData.CONST.SLEEP_SELECTOR).
+            not(appData.CONST.MENU_SELECTOR);/*hpd*/
+        if (visibleControls.length > 0) {
+            // The menu icon was clicked with other controls shown; close all of
+            // the child controls in the set, except for the menu control itself.
+            visibleControls.addClass(appData.CONST.SLEEP_CONTROL);
+        } else {
+            // Only the menu of the control set is currently being shown: Open
+            // up the next configured level(s)
+            showActiveControls(ctlEle);
+        }
+    };// ./toggleControls(ctlEle)
+
+    /**
+     * Adjust the displayed control icons, to match the current state of the
+     * data being controled, and the configuration for the controls set block.
+     * @param  {jQueryElement} ctlEle wrapper element for control block
+     * @return {undefined}
+     */
+    showActiveControls = function (ctlEle) {
+        var ctlSetState, displayControls, matchControls;
         // LOGIC QUERY: should buildPageState() be:
         //   buildControlState? buildControlSetState?
-        pgState = buildPageState(ctlEle);
-        if (pgState.state !== appData.CONST.FINAL_STATE) {
+        ctlSetState = buildPageState(ctlEle);
+        if (ctlSetState.state !== appData.CONST.FINAL_STATE) {
             // non paging would be valid here too, but no case for now
             throw new ReferenceError(
-                'toggle controls references invalid page data'
+                'Show Active Controls references invalid page data'
             );
         }
 
-        //Use the current state to decide whether need to show or hide controls
-        pgState.base.state = pgState.base.state ||
-            appData.CONST.COLLAPSED;//Initialize when state does not yet exist
-        if (pgState.base.state === appData.CONST.COLLAPSED) {
-            console.log('open controls');
-            // Only the root of the control set is currently being shown: Open
-            // up the next level
+        // Always show the menu activation control
+        displayControls = [appData.CONST.MENU_SELECTOR];
 
-            //Use the embeded configuration information to figure out what to do
-            if (typeof pgState.base.rowSelector === 'string') {
-                console.log(pgState.base.rowSelector);
-                //Looks like paging controls may be needed.
-                // Get or set default for full page length (no next page), and
-                // row limit when there are more pages available.
-                if (pgState.rowCount > pgState.base.overflow) {
-                    // wake up the known paging controls
-                    console.log('wake paging');
-                    //Considered using an array in CONST to hold the list of
-                    // paging controls to wakeup here, but decided that further
-                    // logic is going to manage which controls to display based
-                    // on the actual data.  Use a local array instead that can
-                    // be populated programmatically (just) before getting here.
-                    // LOGIC QUERY: ? replace class selectors with CONST
-                    //   references?
-                    pageGroup = ['.pagePrevious', '.pageNext', '.pageAllRows',
-                        '.pageReset'];
-                    pageGroup.forEach(function (mask) {
-                        ctlEle.children(mask).
-                            removeClass(appData.CONST.SLEEP_CONTROL);
-                    });
-                    pgState.base.state = appData.CONST.PAGING;
-                } // else { !(pgState.rowCount > pgState.base.overflow)
-                    // Too few rows to ever need any paging controls (with
-                    // configured page size and overflow limits)
-                //}
-                // TODO: controls to show more or less details, hide all show all
-                // another section of the configiration object?
-            }// ./if (typeof pgState.base.rowSelector === 'string')
-        } else { // !(pgState.base.state === 'closed')
-            console.log('close controls');
-            // The menu icon was clicked with other controls open; close all of
-            // the child controls in the set, except for the menu control itself.
-            ctlEle.children(appData.CONST.CONTROL_SELECTOR).
-                not(appData.CONST.MENU_SELECTOR).
-                addClass(appData.CONST.SLEEP_CONTROL);
-            pgState.base.state = appData.CONST.COLLAPSED;
-        }// ./else !(pgState.base.state === 'closed')
-    };// ./toggleControls(ctlEle)
+        // Use the embeded configuration information to figure out which
+        // controls to work with
+        if (typeof ctlSetState.base.rowSelector === 'string') {
+            console.log(ctlSetState.base.rowSelector);
+            //Paging controls (at least some) are needed.
+
+            // LOGIC QUERY: ? replace class selectors with CONST references?
+            displayControls.push('.pageReset');//Always shown Paging Control(s)
+            if (ctlSetState.rowCount > ctlSetState.base.overflow) {
+                // More data available than fits in the current overflow limit
+                displayControls.push('.pageAllRows');//show all rows at once
+            }
+            if (ctlSetState.pageTop > 0 ||
+                    ctlSetState.pageEnd < ctlSetState.lastRow
+                    ) {
+                // Some data rows are not being displayed; turn on the controls
+                // to move forward and back
+                displayControls.push('.pagePrevious', '.pageNext');
+                // QUERY LOGIC: would be nice to show but disable/ghost individual
+                //   controls when either no previous or no next page to move to
+            }
+            // TODO: controls to show more or less details, hide all
+            // increase / decrease page size
+            // help information modal?
+            // another section of the configuration object?
+        }// ./if (typeof ctlSetState.base.rowSelector === 'string')
+
+        // List of class names for the controls to be displayed
+        matchControls = ctlEle.children(displayControls.join(','));
+        ctlEle.children().not(matchControls).
+            addClass(appData.CONST.SLEEP_CONTROL);
+        matchControls.removeClass(appData.CONST.SLEEP_CONTROL);
+    };// ./showActiveControls(?)
 
     /**
      * Collect state information for the [pseudo] page associated with the
@@ -1002,7 +1018,8 @@ appData.app.build = function (root) {
 
         // first (only) page
         showUpdatedPage(pgState, 0);
-        // TODO: should hide controls for paging (not reset or other config)
+        // This changed to configuration, so update which controls are active
+        showActiveControls(ctlEle);
     };// ./processPageAllRows(ctlEle)
 
     /**
@@ -1018,12 +1035,14 @@ appData.app.build = function (root) {
             throw new ReferenceError('page reset references invalid page data');
         }
 
-        // Get the instance limits back to the base configuration values.
+        // Set the instance limits back to the base configuration values.
         pgState.base.overflow = pgState.base.defaultOverflow;
         pgState.base.pageLimit = pgState.base.defaultPageLimit;
 
         // first page
         showUpdatedPage(pgState, 0);
+        // This changed to configuration, so update which controls are active
+        showActiveControls(ctlEle);
     };// ./processPageReset(ctlEle)
 
     /////////////////////////////////////////////////////////////////////
@@ -1077,8 +1096,8 @@ appData.app.build = function (root) {
     /**
      * Create the DOM elements for a block of user interaction controls,
      * populated based on the provided options
-     * @param {selector} parentEle   jQuery Selector for root element of block
-     *                               to add controls to
+     * @param {selector} parentEle   jQuery Selector for wrapper element of
+     *                               block to add controls to
      * @param {object}   options     configuration information for the controls
      *                               of the block
      * @return {undefined}
