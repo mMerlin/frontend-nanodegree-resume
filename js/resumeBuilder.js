@@ -116,7 +116,7 @@ appData.initialize = function (root) {
 
 
     /**
-     * Crease and populate the object containing work history
+     * Create and populate the object containing work history
      *
      * @type {Object}
      */
@@ -235,7 +235,7 @@ appData.initialize = function (root) {
 
 
     /**
-     * Crease and populate the object containing featured project information
+     * Create and populate the object containing featured project information
      *
      * @type {Object}
      */
@@ -290,7 +290,7 @@ appData.initialize = function (root) {
             {
                 "school" :      "Udacity",
                 "title" :       "Front-End Web Developer NanoDegree",
-                "dates" :       2015,
+                "dates" :       "in progress",
                 "url" :         "https://www.udacity.com/course/nd001"
             },
             {
@@ -341,7 +341,7 @@ appData.initialize = function (root) {
 
         //Individual contact details are optional: only insert when they exist
         function showContact(template, dataSource) {
-            var tmp, tst1, urlWrapper;
+            var urlWrapper;
             if (bio.contacts[dataSource]) {
                 // Have data for this contact source
                 formattedHtml = template.replace(PLC_HLD,
@@ -354,9 +354,12 @@ appData.initialize = function (root) {
                         PLC_HLD,
                         bio.contacts.urls[dataSource]
                     );
-                    tmp = $(formattedHtml);
-                    tst1 = tmp.children().wrapAll(urlWrapper);
-                    formattedHtml = tmp;
+                    formattedHtml = $(formattedHtml);
+                    formattedHtml.children().wrapAll(urlWrapper);
+                    // IDEA: edit the first (span) child to insert a leading
+                    // &nbsp; or 2, then adjust the .permalink left offsets to
+                    // match: The .permalink icon is using up more white space
+                    // than seems good.
                 }
                 $('#topContacts').append(formattedHtml);
             }
@@ -529,7 +532,8 @@ appData.initialize = function (root) {
      * @return {undefined}
      */
     root.education.display = function (education) {
-        var formattedHtml, PLC_HLD;//(also) for nested functions
+        /*global HTMLonlineClasses */
+        var formattedHtml, PLC_HLD, eduRoot;//(also) for nested functions
         PLC_HLD = appData.CONST.DATA_PLACEHOLDER;//for nested functions
 
         if (!($.isPlainObject(education) && $.isArray(education.schools))) {
@@ -546,7 +550,7 @@ appData.initialize = function (root) {
             /*global HTMLschoolStart, HTMLschoolName, HTMLschoolLocation,
                 HTMLschoolDates, HTMLschoolDegree, HTMLschoolMajor */
             var eduEle, mjr;
-            $('#education').append(HTMLschoolStart);
+            eduRoot.append(HTMLschoolStart);
             eduEle = $('.education-entry').last();//The just added wrapper element
 
             formattedHtml = HTMLschoolName.replace(PLC_HLD,
@@ -579,7 +583,54 @@ appData.initialize = function (root) {
             }// ./($.isArray(schoolObject.majors))
         }// ./addOneSchool(schoolObject)
 
+        /**
+         * Add all details for a single online course to the page
+         * @param {object} onlineObject Object with properties holding online
+         *                              course details
+         * @return {undefined}
+         */
+        function addOnlineCourse(onlineObject) {
+            /*global HTMLonlineTitle, HTMLonlineSchool, HTMLonlineDates,
+                HTMLonlineURL */
+            var eduEle, firstPart;
+            eduEle = $(HTMLschoolStart);//New empty wrapper
+            firstPart = HTMLonlineTitle.replace(PLC_HLD,
+                onlineObject.title || 'no title specified'
+                );
+            formattedHtml = HTMLonlineSchool.replace(PLC_HLD,
+                onlineObject.school || 'no school specified'
+                );
+            eduEle.append(firstPart + formattedHtml);
+            formattedHtml = HTMLonlineDates.replace(PLC_HLD,
+                onlineObject.dates || 'no dates specified'
+                );
+            eduEle.append(formattedHtml);
+            formattedHtml = HTMLonlineURL.replace(PLC_HLD,
+                onlineObject.url || 'no url specified'
+                );
+            eduEle.append(formattedHtml);
+
+            eduRoot.append(eduEle);
+        }
+
+        eduRoot = $('#education');
         education.schools.forEach(addOneSchool);
+
+        if ($.isArray(education.onlineCourses)) {
+            // At least one online course exists.  Insert the header, followed
+            // by details for each course
+            eduRoot.append(HTMLonlineClasses);
+            education.onlineCourses.forEach(addOnlineCourse);
+        }
+
+        // TODO: may need to sneak another wrapper around the schools and online
+        // course education-entry groups: to be able to add separate paging
+        // controls to each group.  If I added the existing controls to
+        // #education. both sets would be included in the same paging logic, so
+        // the first page would be regular schools, and maybe the first of the
+        // online courses.  The last page would be no schools, and the last of
+        // the online.  Potentially interesting effect, since the online courses
+        // header would always remain visible.
     };// ./root.education.display(education)
 };// ./appData.initialize(root)
 
