@@ -9,7 +9,8 @@ if (appData === undefined) {
 appData.TEMPLATES = {
     'BLK_CONTROLS' : '<section class="controls sleep"></section>',
     'CTL_MENU_ITEM' : '<div class="%data%"></div>',
-    'CTL_NEST_ITEM' : '<span class="iconNested"></span>'
+    'CTL_NEST_ITEM' : '<span class="iconNested"></span>',
+    'URL_WRAPPER' : '<a href="%data%" class="permalink"></a>'
 };// ./appData.TEMPLATES
 appData.CONST = {};
 appData.CONST.DATA_PLACEHOLDER = '%data%'; //common replacement string
@@ -85,7 +86,7 @@ appData.initialize = function (root) {
             "skype" :           "h.phil.duby",
             "email" :           "philduby@phriendly.net",
             "github" :          "mMerlin",
-            "twitter" :         "H Phil Duby",
+            "twitter" :         "HPhilDuby",
             "location" :        "Calgary, AB, Canada",
             "postal" : {
                 "Country" :     "Canada",
@@ -94,6 +95,11 @@ appData.initialize = function (root) {
                 "zipPostal" :   "T3B 4N3",
                 "street1" :     "27 Silversprings Drive NW",
                 "street2" :     "Unit 66"
+            },
+            "urls" : {
+                "email" :       "mailto:philduby@phriendly.net",
+                "github" :      "https://github.com/mMerlin/mMerlin.github.io",
+                "twitter" :     "https://twitter.com/HPhilDuby"
             }
         },
         "welcomeMessage" :      "Thank-you for visiting my web page.",
@@ -335,10 +341,23 @@ appData.initialize = function (root) {
 
         //Individual contact details are optional: only insert when they exist
         function showContact(template, dataSource) {
+            var tmp, tst1, urlWrapper;
             if (bio.contacts[dataSource]) {
+                // Have data for this contact source
                 formattedHtml = template.replace(PLC_HLD,
                     bio.contacts[dataSource]
                     );
+                if (bio.contacts.urls[dataSource]) {
+                    // Have a url to go along with the raw data; convert the
+                    // body/content of the formatted (li) element into a link
+                    urlWrapper = appData.TEMPLATES.URL_WRAPPER.replace(
+                        PLC_HLD,
+                        bio.contacts.urls[dataSource]
+                    );
+                    tmp = $(formattedHtml);
+                    tst1 = tmp.children().wrapAll(urlWrapper);
+                    formattedHtml = tmp;
+                }
                 $('#topContacts').append(formattedHtml);
             }
         }// ./showContact(template, dataSource)

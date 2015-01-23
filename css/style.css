@@ -429,3 +429,49 @@ span {
   right: 1px;
   transform: rotate(45deg);/* -webkit-transform -moz-transform -o-transform -ms-transform */
 }
+
+/* http://nicolasgallagher.com/pure-css-gui-icons/demo/ */
+#topContacts li {
+  position: relative;
+}
+
+.permalink {
+  margin: 0;
+}
+
+.permalink span:first-child:after,
+.permalink:after,
+.permalink:before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  transform: rotate(45deg);
+  border-radius: 3px;
+  background: none repeat scroll 0% 0% transparent;
+}
+
+.permalink:after,
+.permalink:before {
+  border: 2px solid #c50;
+  height: 4px;
+  width: 6px;
+}
+
+.permalink:before {
+  left: -13px;
+  top: 1px;
+}
+.permalink:after {
+  left: -5px;
+  top: 9px;
+}
+
+.permalink span:first-child:after {
+  left: -10px;
+  width: 10px;
+  height: 2px;
+  border: 1px solid #484848;/* match background color of container element */
+  margin-top: -2px;
+  background-color: #c50;
+  z-index: 1000;
+}
