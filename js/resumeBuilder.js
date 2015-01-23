@@ -8,7 +8,7 @@ if (appData === undefined) {
 //template information, for extension to the base project
 appData.TEMPLATES = {
     'BLK_CONTROLS' : '<section class="controls sleep"></section>',
-    'CTL_MENU_ITEM' : '<div class="ctlMenuItem %data%"></div>',
+    'CTL_MENU_ITEM' : '<div class="%data%"></div>',
     'CTL_NEST_ITEM' : '<span class="iconNested"></span>'
 };// ./appData.TEMPLATES
 appData.CONST = {};
@@ -18,10 +18,9 @@ appData.CONST.WAKE_CONTROL = 'awake'; //css class; show controls as awake (hover
 appData.CONST.SLEEP_CONTROL = 'sleep'; //css class; hide unavailable controls
 appData.CONST.COLLAPSED = 'closed';//control block state collapsed/closed state
 appData.CONST.PAGING = 'paging';//control block has [some] page management active
-appData.CONST.CONTROL_TAG = 'ctlMenuItem';//tag to identify control elements
 appData.CONST.MENU_TAG = 'menuOpenClose';
 appData.CONST.SLEEP_SELECTOR = '.' + appData.CONST.SLEEP_CONTROL;
-appData.CONST.CONTROL_SELECTOR = '.' + appData.CONST.CONTROL_TAG;
+appData.CONST.CONTROL_SELECTOR = '.controls > div';// > span | > *
 appData.CONST.MENU_SELECTOR = '.' + appData.CONST.MENU_TAG;
 appData.CONST.CONTROL_FUNCTIONS = [//based on css class tags
     'menuOpenClose',
@@ -682,11 +681,10 @@ appData.app.build = function (root) {
         function walkUpFrom(ele) {
             var jqEle;
             jqEle = $(ele);
-            if (jqEle.hasClass(appData.CONST.CONTROL_TAG)) {
+            // The control element (icon) is a direct child of the target for
+            // the delegated event.
+            if (ele.parentElement === evObj.currentTarget) {
                 return jqEle;
-            }
-            if (ele === evObj.currentTarget) {//closure reference
-                return null;//could throw typeError instead
             }
             return walkUpFrom(ele.parentElement);
         }// ./walkUpFrom(ele)
@@ -739,7 +737,7 @@ appData.app.build = function (root) {
         // controls should be shown.
         visibleControls = ctlEle.children().
             not(appData.CONST.SLEEP_SELECTOR).
-            not(appData.CONST.MENU_SELECTOR);/*hpd*/
+            not(appData.CONST.MENU_SELECTOR);
         if (visibleControls.length > 0) {
             // The menu icon was clicked with other controls shown; close all of
             // the child controls in the set, except for the menu control itself.

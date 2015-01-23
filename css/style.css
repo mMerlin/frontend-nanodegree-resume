@@ -271,7 +271,8 @@ span {
 }
 
 /* base for css menu icons/buttons */
-.ctlMenuItem {
+/* > span | > * */
+.controls > div {
   display: inline-block;
   font-size: 0;
   height: 40px;
@@ -294,14 +295,14 @@ span {
 
 .iconNested:after,
 .iconNested:before,
-.ctlMenuItem:after,
-.ctlMenuItem:before {
+.controls > div:after,
+.controls > div:before {
   content: '';
   display: block;
   position: absolute;
 }
 
-.ctlMenuItem.awake {
+.controls > div.awake {
   opacity: 0.7;
 }
 
@@ -389,8 +390,8 @@ span {
 /* tags: | arrow | up | down | full range | */
 /* For some unknown reason, this icon is shifting down by 5px.  This icon is
    different due to the nested span to handle the extra graphics, and 5px is
-   the margin used for the main ctlMenuItem class.  Still can not see (with dev
-   tools) where the interaction is.  Just forcing it back up here. */
+   the margin used for the main icon wrapper elements.  Still can not see (with
+   dev tools) where the interaction is.  Just forcing it back up here. */
 .pageAllRows {
   top: -5px;
 }
