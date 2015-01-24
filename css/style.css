@@ -241,6 +241,14 @@ span {
   margin-top: 0;
 }
 
+.imageList > * {
+  float: left;
+}
+
+.project-entry {
+  clear:both;
+}
+
 /* To be able to (easily) position the controls 'out of flow', but absolute
   relative to the parent container, the parent needs be positioned relative
   TODO: use js to turn on relative position of the parent (only) when needed?;
@@ -437,6 +445,7 @@ span {
 
 .permalink {
   margin: 0;
+  padding-left: 10px;
 }
 
 .permalink span:first-child:after,
@@ -458,16 +467,16 @@ span {
 }
 
 .permalink:before {
-  left: -13px;
+  left: -3px;
   top: 1px;
 }
 .permalink:after {
-  left: -5px;
+  left: 5px;
   top: 9px;
 }
 
 .permalink span:first-child:after {
-  left: -10px;
+  left: 0;
   width: 10px;
   height: 2px;
   border: 1px solid #484848;/* match background color of container element */

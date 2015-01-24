@@ -246,14 +246,64 @@ appData.initialize = function (root) {
                 "dates" :       "2014",
                 "description" :
                     "create web page using bootstrap framework to match provided mockup image",
-                "images" : []
+                "images" : [
+                    "images/MockupHint.gif",
+                    "MockupMug.jpg",
+                    "MockupSite",
+                    "MockupTest",
+                    "UdaciousMockup"
+                ],
+                "imageProperties" : {
+                    "images/MockupHint.gif" : {
+                        "src" : "images/MockupHintThumb.jpg",
+                        "url" : "images/MockupHint.gif",
+                        "alt" : "Thumbnail linked to image of hint from course instructor notes"
+                    },
+                    "MockupMug.jpg" : {
+                        "src" : "images/MockupMugThumb.jpg",
+                        "url" : "images/MockupMug.jpg",
+                        "alt" : "Thumbnail linked to image of extract from created Mockup page"
+                    },
+                    "MockupSite" : {
+                        "src" : "images/MockupSiteThumb.jpg",
+                        "url" : "http://mmerlin.github.io/mug-mockup/",
+                        "alt" : "Thumbnail linked to site created from mockup"
+                    },
+                    "MockupTest" : {
+                        "src" : "images/MockupTestThumb.jpg",
+                        "url" : "images/MockupTest.gif",
+                        "alt" : "Thumbnail linked to image of automated test result"
+                    },
+                    "UdaciousMockup" : {
+                        "src" : "images/UdaciousMockupThumb.jpg",
+                        "url" : "images/UdaciousMockup.gif",
+                        "alt" : "Thumbnail linked to image showing the Udacious result"
+                    }
+                },
+                "url" :         "https://github.com/mMerlin/mug-mockup"
             },
             {
                 "title" :       "Interactive Résumé",
                 "dates" :       "2015",
                 "description" :
                     "Build dynamic online résumé.&nbsp; You’re looking at a descendent of it!",
-                "images" : []
+                "images" : [
+                    "images/MenuClosedAndAwake.gif",
+                    "images/MenuOpenOnAll.gif"
+                ],
+                "imageProperties" : {
+                    "images/MenuClosedAndAwake.gif" : {
+                        "src" : "images/MenuCLosedAwakeThumb.jpg",
+                        "url" : "images/MenuClosedAndAwake.gif",
+                        "alt" : "Thumbnail linked to image showing the icon to open the paging menu"
+                    },
+                    "images/MenuOpenOnAll.gif" : {
+                        "src" : "images/MenuOpenOnAllThumb.jpg",
+                        "url" : "images/MenuOpenOnAll.gif",
+                        "alt" : "Thumbnail linked to image showing the opened paging menu"
+                    }
+                },
+                "url" :         "https://github.com/mMerlin/resume"
             }
         ]
     };// ./root.projects
@@ -492,14 +542,20 @@ appData.initialize = function (root) {
         function addOneProject(projectObject) {
             /*global HTMLprojectStart, HTMLprojectTitle, HTMLprojectDates,
                 HTMLprojectDescription, HTMLprojectImage */
-            var prjEle, img, formattedHtml;
-            $('#projects').append(HTMLprojectStart);
-            prjEle = $('.project-entry:last');//The just added project wrapper element
+            var prjEle, imgWrap, tmpEle, img, propObj, imgKey, attrVal, formattedHtml;
+            //$('#projects').append(HTMLprojectStart);
+            //prjEle = $('.project-entry:last');//The just added project wrapper element
+            prjEle = $(HTMLprojectStart);//Keep off the page until loaded
 
             formattedHtml = HTMLprojectTitle.replace(PLC_HLD,
                 projectObject.title || 'no project title'
                 );
-            prjEle.append(formattedHtml);
+            tmpEle = $(formattedHtml);
+            if (projectObject.url) {
+                //There is a url to go along with the project; fill it in
+                tmpEle.attr('href', projectObject.url);
+            }
+            prjEle.append(tmpEle);
 
             formattedHtml = HTMLprojectDates.replace(PLC_HLD,
                 projectObject.dates || 'no project dates'
@@ -511,14 +567,38 @@ appData.initialize = function (root) {
                 );
             prjEle.append(formattedHtml);
 
+            // Makesure image properties exist, even if they are empty
+            projectObject.imageProperties = projectObject.imageProperties || {};
+            // Create a wrapper for the images, so that they can easily be formatted
+            // to float and wrap
+            imgWrap = $('<div class="imageList"></div>');
             for (img = 0; img < projectObject.images.length; img += 1) {
-                formattedHtml = HTMLprojectImage.replace(PLC_HLD,
-                    projectObject.images[img]
-                    );
-                prjEle.append(formattedHtml);
-                // TODO: Add generic alt attribute for each image based on proj title
-                // and img (sequence number)
+                // Prefer to use array of objects for the initial images with
+                // thumbnails and associated links to the larger version, but
+                // did not want to change the structure defined for the
+                // projects.  So just extended with (optional) parallel
+                // information instead.
+                imgKey = projectObject.images[img];
+                propObj = projectObject.imageProperties[imgKey] || {};
+                attrVal = propObj.src || imgKey;
+                formattedHtml = HTMLprojectImage.replace(PLC_HLD, attrVal);
+                tmpEle = $(formattedHtml);
+
+                attrVal = propObj.alt ||
+                    projectObject.title + ' project image ' + img;
+                tmpEle.attr('alt', attrVal);
+
+                if (propObj.url) {
+                    // LOGIC QUERY may need to add a class for consistent
+                    // formatting (no added formatting from anchor tag)
+                    // tmpEle = $('<a class="unformatted"></a>').append(tmpEle);
+                    tmpEle = $('<a></a>').append(tmpEle);
+                    tmpEle.attr('href', propObj.url);
+                }
+                imgWrap.append(tmpEle);
             }
+            prjEle.append(imgWrap);
+            $('#projects').append(prjEle);
         }// ./addOneProject(projectObject)
 
         projects.projects.forEach(addOneProject);
@@ -843,7 +923,6 @@ appData.app.build = function (root) {
         // Use the embeded configuration information to figure out which
         // controls to work with
         if (typeof ctlSetState.base.rowSelector === 'string') {
-            console.log(ctlSetState.base.rowSelector);
             //Paging controls (at least some) are needed.
 
             // LOGIC QUERY: ? replace class selectors with CONST references?
@@ -1258,7 +1337,6 @@ appData.app.build = function (root) {
      */
     ctl.baseClick = function (e) {
         var ctlEle, ctlTarget, ctlFunction;
-        console.log('baseClick');
 
         // A bit of sanity check validation
         ctlEle = $(this);// The wrapper for the block of controls
@@ -1278,7 +1356,6 @@ appData.app.build = function (root) {
         ctlTarget = locateEventControl(e);
         //ctlFunction = getControlFunction(ctlTarget); //only if need more
         ctlFunction = getControlFunction(ctlTarget.attr('class'));
-        console.log(appData.CONST.CONTROL_FUNCTIONS[ctlFunction]);
 
         // LOGIC QUERY:
         // using (a bunch) of inner functions for closure would eliminate the
@@ -1361,7 +1438,7 @@ appData.app.initialize = function (root) {
     });
     $('.controls').on('click.aro', ctl.baseClick);
 
-    // TODO: trigger reset action/event instead of direct function call?
+    // LOGIC QUERY trigger reset action/event instead of direct function call?
     $.each($('.controls'), function (idx, controlEle) {
         ctl.resetBlock(controlEle, idx);// idx ignored; jslint pacifier
     });
