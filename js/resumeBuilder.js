@@ -10,7 +10,12 @@ appData.TEMPLATES = {
     'BLK_CONTROLS' : '<section class="controls sleep"></section>',
     'CTL_MENU_ITEM' : '<div class="%data%"></div>',
     'CTL_NEST_ITEM' : '<span class="iconNested"></span>',
-    'URL_WRAPPER' : '<a href="%data%" class="permalink"></a>'
+    'URL_WRAPPER' : '<a href="%data%" class="permalink"></a>',
+    'IMAGES_START' : '<ul class="imageList"></ul>',
+    'IMAGE_HOLDER' : '<li></li>',
+    'BARE_ANCHOR' : '<a></a>',
+    'IMAGE_DESCRIPTION' : '%data% project image %data%',
+    'EVENING_CLASSES' : '<h3>Day and Evening Classes</h3>'
 };// ./appData.TEMPLATES
 appData.CONST = {};
 appData.CONST.DATA_PLACEHOLDER = '%data%'; //common replacement string
@@ -104,7 +109,26 @@ appData.initialize = function (root) {
         },
         "welcomeMessage" :      "Thank-you for visiting my web page.",
         "skills" : [
-            "too many programming languages to list",
+            "HTML",
+            "CSS",
+            "JavaScript",
+            "jQuery",
+            "C",
+            "C#",
+            "Python",
+            "PHP",
+            "Ruby",
+            "Fortran",
+            "Basic",
+            "VBA",
+            "Visual Basic",
+            "COBOL",
+            "Java",
+            "ASP",
+            "ASP.NET",
+            "SQL",
+            "XML",
+            "Many more languages",
             "analysis",
             "desktop support"
         ],
@@ -250,8 +274,7 @@ appData.initialize = function (root) {
                     "images/MockupHint.gif",
                     "MockupMug.jpg",
                     "MockupSite",
-                    "MockupTest",
-                    "UdaciousMockup"
+                    "MockupTest"
                 ],
                 "imageProperties" : {
                     "images/MockupHint.gif" : {
@@ -273,11 +296,6 @@ appData.initialize = function (root) {
                         "src" : "images/MockupTestThumb.jpg",
                         "url" : "images/MockupTest.gif",
                         "alt" : "Thumbnail linked to image of automated test result"
-                    },
-                    "UdaciousMockup" : {
-                        "src" : "images/UdaciousMockupThumb.jpg",
-                        "url" : "images/UdaciousMockup.gif",
-                        "alt" : "Thumbnail linked to image showing the Udacious result"
                     }
                 },
                 "url" :         "https://github.com/mMerlin/mug-mockup"
@@ -354,6 +372,71 @@ appData.initialize = function (root) {
                 "school" :      "Udacity",
                 "dates" :       2012,
                 "url" :         "https://www.udacity.com/course/cs101"
+            }
+        ],
+        "eveningCourses" : [
+            {
+                "title" :       "JavaScript",
+                "school" :      "University of Calgary",
+                "location" :    "Calgary, AB, Canada",
+                "dates" :       2011,
+                "url" :         "http://ucalgary.ca/"
+            },
+            {
+                "school" :      "University of Calgary",
+                "location" :    "Calgary, AB, Canada",
+                "title" :       "PHP and MySql",
+                "dates" :       2011,
+                "url" :         "http://ucalgary.ca/"
+            },
+            {
+                "school" :      "University of Calgary",
+                "location" :    "Calgary, AB, Canada",
+                "title" :       "Adobe Flash CS5",
+                "dates" :       2011,
+                "url" :         "http://ucalgary.ca/"
+            },
+            {
+                "school" :      "University of Calgary",
+                "location" :    "Calgary, AB, Canada",
+                "title" :       "Adobe Photoshop CS5",
+                "dates" :       2011,
+                "url" :         "http://ucalgary.ca/"
+            },
+            {
+                "school" :      "University of Calgary",
+                "location" :    "Calgary, AB, Canada",
+                "title" :       "Adobe Illustrator CS5",
+                "dates" :       2010,
+                "url" :         "http://ucalgary.ca/"
+            },
+            {
+                "school" :      "University of Calgary",
+                "location" :    "Calgary, AB, Canada",
+                "title" :       "Microsoft SQL Server [2008 R2] Introduction",
+                "dates" :       2010,
+                "url" :         "http://ucalgary.ca/"
+            },
+            {
+                "school" :      "University of Calgary",
+                "location" :    "Calgary, AB, Canada",
+                "title" :       "Object Oriented Progamming Fundamentals [Java with Netbeans]",
+                "dates" :       2010,
+                "url" :         "http://ucalgary.ca/"
+            },
+            {
+                "school" :      "University of Calgary",
+                "location" :    "Calgary, AB, Canada",
+                "title" :       "Microsoft .NET Introduction [VB.NET 2010]",
+                "dates" :       2010,
+                "url" :         "http://ucalgary.ca/"
+            },
+            {
+                "school" :      "University of Calgary",
+                "location" :    "Calgary, AB, Canada",
+                "title" :       "Microsoft Office Specialist, Excel 2007",
+                "dates" :       2010,
+                "url" :         "http://ucalgary.ca/"
             }
         ]
     };// ./root.education
@@ -571,7 +654,7 @@ appData.initialize = function (root) {
             projectObject.imageProperties = projectObject.imageProperties || {};
             // Create a wrapper for the images, so that they can easily be formatted
             // to float and wrap
-            imgWrap = $('<div class="imageList"></div>');
+            imgWrap = $(appData.TEMPLATES.IMAGES_START);
             for (img = 0; img < projectObject.images.length; img += 1) {
                 // Prefer to use array of objects for the initial images with
                 // thumbnails and associated links to the larger version, but
@@ -584,18 +667,17 @@ appData.initialize = function (root) {
                 formattedHtml = HTMLprojectImage.replace(PLC_HLD, attrVal);
                 tmpEle = $(formattedHtml);
 
-                attrVal = propObj.alt ||
-                    projectObject.title + ' project image ' + img;
+                attrVal = propObj.alt || appData.TEMPLATES.IMAGE_DESCRIPTION.replace(
+                    PLC_HLD,
+                    projectObject.title
+                ).replace(PLC_HLD, img + 1);
                 tmpEle.attr('alt', attrVal);
 
                 if (propObj.url) {
-                    // LOGIC QUERY may need to add a class for consistent
-                    // formatting (no added formatting from anchor tag)
-                    // tmpEle = $('<a class="unformatted"></a>').append(tmpEle);
-                    tmpEle = $('<a></a>').append(tmpEle);
+                    tmpEle = $(appData.TEMPLATES.BARE_ANCHOR).append(tmpEle);
                     tmpEle.attr('href', propObj.url);
                 }
-                imgWrap.append(tmpEle);
+                imgWrap.append($(appData.TEMPLATES.IMAGE_HOLDER).append(tmpEle));
             }
             prjEle.append(imgWrap);
             $('#projects').append(prjEle);
@@ -612,8 +694,11 @@ appData.initialize = function (root) {
      * @return {undefined}
      */
     root.education.display = function (education) {
-        /*global HTMLonlineClasses */
-        var formattedHtml, PLC_HLD, eduRoot;//(also) for nested functions
+        /*global HTMLonlineClasses, HTMLschoolName, HTMLschoolDegree,
+            HTMLschoolDates, HTMLonlineTitle, HTMLonlineSchool,
+            HTMLonlineDates */
+        var formattedHtml, PLC_HLD, eduRoot, eduSource, showURL;
+        // vars (also) used for nested functions (closure scope)
         PLC_HLD = appData.CONST.DATA_PLACEHOLDER;//for nested functions
 
         if (!($.isPlainObject(education) && $.isArray(education.schools))) {
@@ -622,95 +707,130 @@ appData.initialize = function (root) {
         }
 
         /**
-         * Add all details for a single school to the page
-         * @param {object} schoolObject Object with properties holding school details
+         * Add all details for a single education instance to the page
+         *
+         * This handles schools, online courses, and evening courses.  They all
+         * have similar data and formatting.  There are just enough differences
+         * to make refactoring to a single function a bit tricky.  Especially
+         * while trying to keep the processing fairly generic.  Needed a bit of
+         * special case hard-coding.
+         *
+         * @param {object} educationObject Object with properties holding
+         *                                 education instance details
          * @return {undefined}
          */
-        function addOneSchool(schoolObject) {
-            /*global HTMLschoolStart, HTMLschoolName, HTMLschoolLocation,
-                HTMLschoolDates, HTMLschoolDegree, HTMLschoolMajor */
-            var eduEle, mjr;
-            eduRoot.append(HTMLschoolStart);
-            eduEle = $('.education-entry').last();//The just added wrapper element
+        function addEducation(educationObject) {
+            /*global HTMLschoolStart, HTMLschoolLocation, HTMLschoolMajor,
+                HTMLonlineURL */
+            var eduEle, firstPart, tmpEle, mjr;
 
-            formattedHtml = HTMLschoolName.replace(PLC_HLD,
-                schoolObject.name || 'no school name'
+            // I like populating a local element before adding, instead of using
+            // :last or .last() to get it back to add children.  This works even
+            // if there is no convenient tag to identify the added element.
+            //eduRoot.append(HTMLschoolStart);
+            //eduEle = $('.education-entry:last');//The just added wrapper element
+            //eduEle = eduRoot.last();//The just added wrapper element
+            eduEle = $(HTMLschoolStart);// New empty wrapper
+
+            firstPart = eduSource.firstTemplate.replace(PLC_HLD,
+                educationObject[eduSource.firstData] || 'no title specified'
+                );
+            formattedHtml = eduSource.secondTemplate.replace(PLC_HLD,
+                educationObject[eduSource.secondData] || 'no degree or school'
+                );
+            tmpEle = $(firstPart + formattedHtml);
+
+            if (educationObject.url) {
+                // Fill in the link to the school (and degree) or specific course
+                // Separate for online?? hpd
+                tmpEle.attr('href', educationObject.url);
+            }
+            eduEle.append(tmpEle);
+
+            if (educationObject.location) {
+                formattedHtml = HTMLschoolLocation.replace(PLC_HLD,
+                    educationObject.location
+                    );
+                eduEle.append(formattedHtml);
+            }
+
+            formattedHtml = eduSource.dates.replace(PLC_HLD,
+                educationObject.dates || 'no dates'
                 );
             eduEle.append(formattedHtml);
 
-            formattedHtml = HTMLschoolLocation.replace(PLC_HLD,
-                schoolObject.location || 'no school location'
-                );
-            eduEle.append(formattedHtml);
-
-            formattedHtml = HTMLschoolDates.replace(PLC_HLD,
-                schoolObject.dates || 'no dates'
-                );
-            eduEle.append(formattedHtml);
-
-            formattedHtml = HTMLschoolDegree.replace(PLC_HLD,
-                schoolObject.degree || 'no degree specified'
-                );
-            eduEle.append(formattedHtml);
-
-            if ($.isArray(schoolObject.majors)) {
-                for (mjr = 0; mjr < schoolObject.majors.length; mjr += 1) {
+            if ($.isArray(educationObject.majors)) {
+                for (mjr = 0; mjr < educationObject.majors.length; mjr += 1) {
                     formattedHtml = HTMLschoolMajor.replace(PLC_HLD,
-                        schoolObject.majors[mjr]
+                        educationObject.majors[mjr]
                         );
                     eduEle.append(formattedHtml);
                 }// ./for
-            }// ./($.isArray(schoolObject.majors))
-        }// ./addOneSchool(schoolObject)
+            }// ./($.isArray(educationObject.majors))
 
-        /**
-         * Add all details for a single online course to the page
-         * @param {object} onlineObject Object with properties holding online
-         *                              course details
-         * @return {undefined}
-         */
-        function addOnlineCourse(onlineObject) {
-            /*global HTMLonlineTitle, HTMLonlineSchool, HTMLonlineDates,
-                HTMLonlineURL */
-            var eduEle, firstPart;
-            eduEle = $(HTMLschoolStart);//New empty wrapper
-            firstPart = HTMLonlineTitle.replace(PLC_HLD,
-                onlineObject.title || 'no title specified'
-                );
-            formattedHtml = HTMLonlineSchool.replace(PLC_HLD,
-                onlineObject.school || 'no school specified'
-                );
-            eduEle.append(firstPart + formattedHtml);
-            formattedHtml = HTMLonlineDates.replace(PLC_HLD,
-                onlineObject.dates || 'no dates specified'
-                );
-            eduEle.append(formattedHtml);
-            formattedHtml = HTMLonlineURL.replace(PLC_HLD,
-                onlineObject.url || 'no url specified'
-                );
-            eduEle.append(formattedHtml);
+            // currently the only thing that distinguishes between the data for
+            // an online versus evening course, is that evening MIGHT have a
+            // location entry for the school.  That is not enough for safe
+            // separation, but only online has the explicit URL entry.  Need to
+            // use closure scope to get the caller to tell us when to show it.
+            if (showURL) {
+                formattedHtml = HTMLonlineURL.replace(PLC_HLD,
+                    educationObject.url || 'no url specified'
+                    );
+                tmpEle = $(formattedHtml);
+                if (educationObject.url) {
+                    // If a url exists, use it to create the link
+                    tmpEle.last().attr('href', educationObject.url);
+                }
+                eduEle.append(tmpEle);
+            }
 
             eduRoot.append(eduEle);
-        }
+        }// ./addEducation(educationObject)
 
         eduRoot = $('#education');
-        education.schools.forEach(addOneSchool);
 
+        showURL = false;
+        eduSource = {
+            'firstTemplate' : HTMLschoolName,
+            'firstData' : 'name',
+            'secondTemplate' : HTMLschoolDegree,
+            'secondData' : 'degree',
+            'dates' : HTMLschoolDates
+            // currently HTMLschoolDates === HTMLonlineDates, but since they are
+            // specified separately, keep them separate here too by using lookup
+        };
+        education.schools.forEach(addEducation);
+
+        eduSource = {
+            'firstTemplate' : HTMLonlineTitle,
+            'firstData' : 'title',
+            'secondTemplate' : HTMLonlineSchool,
+            'secondData' : 'school',
+            'dates' : HTMLonlineDates
+        };
         if ($.isArray(education.onlineCourses)) {
             // At least one online course exists.  Insert the header, followed
             // by details for each course
+            showURL = true;
             eduRoot.append(HTMLonlineClasses);
-            education.onlineCourses.forEach(addOnlineCourse);
+            education.onlineCourses.forEach(addEducation);
         }
 
-        // TODO: may need to sneak another wrapper around the schools and online
-        // course education-entry groups: to be able to add separate paging
+        if ($.isArray(education.eveningCourses)) {
+            showURL = false;
+            eduRoot.append(appData.TEMPLATES.EVENING_CLASSES);
+            education.eveningCourses.forEach(addEducation);
+        }
+
+        // TODO: may need to sneak another wrapper around the separate groups
+        // of education-entry blocks: to be able to add separate paging
         // controls to each group.  If I added the existing controls to
-        // #education. both sets would be included in the same paging logic, so
+        // #education. all sets would be included in the same paging logic, so
         // the first page would be regular schools, and maybe the first of the
-        // online courses.  The last page would be no schools, and the last of
-        // the online.  Potentially interesting effect, since the online courses
-        // header would always remain visible.
+        // online courses.  The last page would be all evening courses.
+        // Potentially interesting effect, since the block headers would always
+        // remain visible.  Semi accordion style
     };// ./root.education.display(education)
 };// ./appData.initialize(root)
 

@@ -13,10 +13,6 @@
   padding-right: 5%;
 }
 
-.emptyBlock {
-  background-color: black;
-}
-
 h1 {
   font-size: 40px;
   color: #F5A623;
@@ -132,10 +128,6 @@ a {
   padding: 10px;
 }
 
-#skills {
-  flex-direction: column;
-}
-
 .center-content {
   padding-top: 2.5%;
   padding-left: 5%;
@@ -222,6 +214,35 @@ span {
   }
 }
 
+
+/* Added for cloned project */
+
+/* override from original styles */
+
+/* The formatting for dates and locations seemed a bit tricky / sloppy, but it
+   (mostly) worked; dates floated left, location floated right, and following
+   content 'wraps' to the next line, or starts with an explict <br>.  As was,
+   failed if date is the final item of the block: the following block ended up
+   indented.  Adding clear: both to the block (education-entry) fixes this, as
+   long as the following element following the final block also does the clear.
+   Still broke for the last education-entry block, if the following element
+   did not have the clear.  Better is to clear before ending the block.
+
+   With only location floated, layout does not mess up if there is no <br> or
+   clear after the date and location.  Same if no location exists.  Assuming
+   the location element is before the date. */
+.date-text {
+  float: none;
+  display: inline-block;
+}
+
+/* alternate formatting method for sections of the raw html that do not have
+   any content.  Instead of specifying element level styling, just add the
+   css class, then let this handle whatever styling option is desired. */
+.emptyBlock {
+  background-color: black;
+}
+
 .mapInfo {
   background-color: #aaa;
   font-size: small;
@@ -241,12 +262,19 @@ span {
   margin-top: 0;
 }
 
-.imageList > * {
-  float: left;
+.imageList {
+  display: -webkit-flex;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  padding: 10px;
 }
 
-.project-entry {
-  clear:both;
+.imageList a {
+  margin: 0;
+  padding: 0;
+  line-height: 0;
 }
 
 /* To be able to (easily) position the controls 'out of flow', but absolute
