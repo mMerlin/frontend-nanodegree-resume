@@ -236,11 +236,31 @@ span {
   display: inline-block;
 }
 
+/* remove padding from generic spans.  These are inline elements.  If there
+   needs to be space around them, a normal space character is probably the
+   correct (semantic) structure.  For the general case, instead of
+   <span>content</span><span>content</span> or <span>content</span>content
+   with padding, use
+   <span>content</span> <span>content</span> or <span>content</span> content
+   without padding.  Other use cases can provide the padding (only) when
+   needed. */
+.span {
+  padding: 0;
+}
+
 /* alternate formatting method for sections of the raw html that do not have
    any content.  Instead of specifying element level styling, just add the
    css class, then let this handle whatever styling option is desired. */
 .emptyBlock {
   background-color: black;
+}
+
+#skills {
+  line-height: 1.3;
+}
+
+#skills li {
+  padding: 0 5px;
 }
 
 .mapInfo {
@@ -469,6 +489,7 @@ span {
 /* http://nicolasgallagher.com/pure-css-gui-icons/demo/ */
 #topContacts li {
   position: relative;
+  padding: 0 5px;
 }
 
 .permalink {
@@ -511,4 +532,20 @@ span {
   margin-top: -2px;
   background-color: #c50;
   z-index: 1000;
+}
+
+.lessSkills:after,
+.moreSkills:after {
+  border-radius: 0.5em;
+  padding: 0 7px;
+}
+
+.moreSkills:after {
+  background-color: aqua;
+  content: 'More…';
+}
+
+.lessSkills:after {
+  background-color: orange;
+  content: 'Less…';
 }
