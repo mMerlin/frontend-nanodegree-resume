@@ -28,6 +28,9 @@ appData.CONST.MENU_TAG = 'menuOpenClose';
 appData.CONST.SLEEP_SELECTOR = '.' + appData.CONST.SLEEP_CONTROL;
 appData.CONST.CONTROL_SELECTOR = '.controls > div';// > span | > *
 appData.CONST.MENU_SELECTOR = '.' + appData.CONST.MENU_TAG;
+appData.CONST.MORE_SKILLS_TAG = 'moreSkills';
+appData.CONST.MORE_SKILLS_SELECTOR = '.' + appData.CONST.MORE_SKILLS_TAG;
+appData.CONST.LESS_SKILLS_TAG = 'lessSkills';
 appData.CONST.CONTROL_FUNCTIONS = [//based on css class tags
     'menuOpenClose',
     'pagePrevious',
@@ -118,19 +121,30 @@ appData.initialize = function (root) {
             "Python",
             "PHP",
             "Ruby",
-            "Fortran",
             "Basic",
             "VBA",
             "Visual Basic",
-            "COBOL",
             "Java",
             "ASP",
             "ASP.NET",
-            "SQL",
+            "MySql",
             "XML",
-            "Many more languages",
             "analysis",
             "desktop support"
+        ],
+        "moreSkills" : [
+            "Fortran",
+            "COBOL",
+            "RoR",
+            "C++",
+            "Pascal",
+            "Assember",
+            "MS SQL",
+            "Powerhouse",
+            "Corvision",
+            "Smartstar",
+            "MS Access",
+            "Intergraph"
         ],
         "biopic" :              "images/biopic.jpg"
     };// ./root.bio
@@ -455,8 +469,8 @@ appData.initialize = function (root) {
     root.bio.display = function (bio) {
         /*global HTMLheaderRole, HTMLheaderName, HTMLmobile, HTMLemail,
             HTMLgithub, HTMLtwitter, HTMLblog, HTMLlocation, HTMLbioPic,
-            HTMLWelcomeMsg, HTMLskillsStart */
-        var formattedHtml, PLC_HLD;//[also] used in inner closure scope
+            HTMLWelcomeMsg */
+        var formattedHtml, PLC_HLD, wrapperEle;//[also] used in inner closure scope
         PLC_HLD = appData.CONST.DATA_PLACEHOLDER;
         if (!$.isPlainObject(bio)) {
             //Major problem. This is not going to work, no practical runtime recovery
@@ -488,11 +502,7 @@ appData.initialize = function (root) {
                         bio.contacts.urls[dataSource]
                     );
                     formattedHtml = $(formattedHtml);
-                    formattedHtml.children().wrapAll(urlWrapper);
-                    // IDEA: edit the first (span) child to insert a leading
-                    // &nbsp; or 2, then adjust the .permalink left offsets to
-                    // match: The .permalink icon is using up more white space
-                    // than seems good.
+                    formattedHtml.wrapInner(urlWrapper);
                 }
                 $('#topContacts').append(formattedHtml);
             }
@@ -523,23 +533,55 @@ appData.initialize = function (root) {
             );
         $('#header').append(formattedHtml);
 
-        /**
-         * Add a single skill entry to the page
-         * @param  {string} singleSkill The name/description for a single skill
-         * @return {undefined}
-         */
-        function showSkill(singleSkill) {
-            /*global HTMLskills */
-            formattedHtml = HTMLskills.replace(PLC_HLD,
-                singleSkill
-                );
-            $('#skills').append(formattedHtml);
-        }// ./showSkill(singleSkill)
+        function showAllSkills() {
+            /*global HTMLskillsStart, HTMLskills */
+            var skillsBlock, skillEle, moreStart;
+
+            /**
+             * Add a single skill entry to the page
+             * @param  {string} singleSkill The name/description for a single skill
+             * @return {undefined}
+             */
+            function addOneSkill(singleSkill) {
+                formattedHtml = HTMLskills.replace(PLC_HLD, singleSkill);
+                wrapperEle.append(formattedHtml);
+            }// ./addOneSkill(singleSkill)
+
+            skillsBlock = $(HTMLskillsStart);// Keep 'local' until populated
+            wrapperEle = skillsBlock.last();// The '#skills' element
+            bio.skills.forEach(addOneSkill);//append all skills listed
+
+            // Add any extra skills that are to be initially hidden, but can be
+            // shown by user choice
+            if ($.isArray(bio.moreSkills) && bio.moreSkills.length > 0) {
+                // Save the index where the first extended skill will be stored.
+                moreStart = wrapperEle.children().length;
+                bio.moreSkills.forEach(addOneSkill);
+
+                // Append an extra dummy skill to use for the More/Less button
+                formattedHtml = HTMLskills.replace(PLC_HLD, '');
+                skillEle = $(formattedHtml);
+                skillEle.addClass(appData.CONST.MORE_SKILLS_TAG);
+                skillEle.addClass('skillsButton');
+                wrapperEle.append(skillEle);
+
+                // Add a tag to the last 'regular' skill, so that the added
+                // elements can be found (as a block) later.  This is the stop
+                // marker to use with .prevUntil
+                $(wrapperEle.children()[moreStart - 1]).attr('data-tag', 'lastShownSkill');
+
+                // Mark all of the extra skills to not be displayed (initially)
+                wrapperEle.children().not(appData.CONST.MORE_SKILLS_SELECTOR).
+                    slice(moreStart).addClass(appData.CONST.ROW_HIDE);
+            }
+
+            // Add the fully populated skills block to the page header
+            $('#header').append(skillsBlock);//hpd
+        }// .showAllSkills()
 
         // Add the skills summary to the header: only when skills exist
         if ($.isArray(bio.skills) && bio.skills.length > 0) {
-            $('#header').append(HTMLskillsStart);
-            bio.skills.forEach(showSkill);//append all skills listed
+            showAllSkills();
         }
     };// ./root.bio.display(bio)
 
@@ -1453,6 +1495,7 @@ appData.app.build = function (root) {
      * Handle all of the click events for all control function blocks
      * A single delate handler, instead of attaching a handler to each control
      *
+     * @param  {jQuery_Event} e click event
      * @return {undefined}
      */
     ctl.baseClick = function (e) {
@@ -1538,6 +1581,43 @@ appData.app.build = function (root) {
             screenX: OS viewport?
             screenY
     */
+
+    /**
+     * Handle click events for the button to toggle showing of extra skills
+     * @return {undefined}
+     */
+    ctl.moreLessClick = function () {//(e) not used, not specified: sooth jslint
+        var ctlEle, skillSet;
+
+        // The element that was clicked, which is setup to be the last skill
+        // element, or at least the first element after the last 'more skills'
+        // element.
+        ctlEle = $(this);
+
+        // Get the set of (skill) elements to work with
+
+        // All of the 'extra' skill entries.  All elements back to the last
+        // skill elment that is always shown.
+        skillSet = ctlEle.prevUntil('[data-tag="lastShownSkill"]');
+
+        if (ctlEle.hasClass(appData.CONST.MORE_SKILLS_TAG)) {
+            // Show the extra skills
+            skillSet.removeClass(appData.CONST.ROW_HIDE);
+
+            // Switch the button to show Less instead of More
+            ctlEle.removeClass(appData.CONST.MORE_SKILLS_TAG);
+            ctlEle.addClass(appData.CONST.LESS_SKILLS_TAG);
+        } else {
+            // Hide the extra skills
+            skillSet.addClass(appData.CONST.ROW_HIDE);
+
+            // Switch the button to show More instead of Less
+            ctlEle.removeClass(appData.CONST.LESS_SKILLS_TAG);
+            ctlEle.addClass(appData.CONST.MORE_SKILLS_TAG);
+        }
+        //skillEle.addClass('skillsButton');
+
+    };// ./moreLessClick(e)
 };// ./appData.app.build(root)
 
 /**
@@ -1557,6 +1637,7 @@ appData.app.initialize = function (root) {
         $(this).removeClass(appData.CONST.WAKE_CONTROL);
     });
     $('.controls').on('click.aro', ctl.baseClick);
+    $('.skillsButton').on('click', ctl.moreLessClick);
 
     // LOGIC QUERY trigger reset action/event instead of direct function call?
     $.each($('.controls'), function (idx, controlEle) {
