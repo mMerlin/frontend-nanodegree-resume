@@ -10,6 +10,7 @@
   -->
   <script src="js/jQuery.js"></script>
   <script src="js/helper.js"></script>
+  <script src="js/resumeBuilder.js"></script>
 
   <!--
   support for an interactive Google Map
@@ -46,24 +47,22 @@
     </div>
   </div>
 
-  <script src="js/resumeBuilder.js"></script>
-
   <script type="text/javascript">
-    /*jslint browser: true, indent: 2, maxlen: 82 */
+    /*jslint browser: true, indent: 2, maxlen: 80 */
     /**
      * Provided (and tweaked) code to adjust the display properties for any
      * skeleton sections that did not get populated.
      *
-     * Anonymous, self-executing, wrapper function, to keep everything done here
-     * out of the global namespace
+     * Use setTimeout with an anonymous function to give the code in
+     * resumeBuilder to finish.  That starts running when the DOM is ready,
+     * which is just about the same time that this code gets seen.
      *
-     * No jQuery here.  This backstops potential failure modes, like failing to
-     * load the jQuery library.  Use only absolute basic functionality.
-     *
-     * @return {undefined}
+     * No jQuery here.  This backstops potential failure modes, like failing
+     * to load the jQuery library.  Use only absolute basic javaScript.
      */
-    (function () {
+    setTimeout(function () {
       'use strict';
+      //return;
 
       //function to DRY the logic to tweak the display of an empty section
       function showAsEmpty(rootId) {
@@ -91,7 +90,7 @@
       if (document.getElementById('map') === null) {
         showAsEmpty('mapDiv');
       }
-    }());
+    }, 500);// Wait half a second before starting the empty block checks
   </script>
 </body>
 </html>
