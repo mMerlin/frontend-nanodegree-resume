@@ -486,6 +486,7 @@ span {
   transform: rotate(45deg);/* -webkit-transform -moz-transform -o-transform -ms-transform */
 }
 
+#footerContacts li,
 #topContacts li {
   position: relative;
   padding: 0 5px;

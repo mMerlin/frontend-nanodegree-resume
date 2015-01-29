@@ -263,7 +263,7 @@ $(function () {
                             formattedHtml = $(formattedHtml);
                             formattedHtml.wrapInner(urlWrapper);
                         }
-                        $('#topContacts').append(formattedHtml);
+                        $('#topContacts, #footerContacts').append(formattedHtml);
                     }
                 }// ./showContact(template, dataSource)
 
