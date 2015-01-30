@@ -24,8 +24,8 @@ function inName(localNames) {
 
     // Start by changing to all lowercase, then only uppercase where needed
     nameParts = localNames.trim().toLocaleLowerCase().split(" ");
-    finalName = nameParts.length - 1;//index to last part of name === surname
-    for (nm = 0; nm < finalName; nm += 1) {//First, middle, and initials
+    finalName = nameParts.length - 1;// index to last part of name === surname
+    for (nm = 0; nm < finalName; nm += 1) {// First, middle, and initials
         if (nameParts[nm].length > 0) {
             // Safety check: handle multiple spaces between names
             // Set leading character to uppercase
@@ -131,20 +131,19 @@ $(function () {
          * @return {undefined}
          */
         base.initialize = function (dataRoot) {
-            //Tell jslint to allow long lines in the JSON data structures
-            /*jslint maxlen: 150 */
-
             /*
                 The Front-End Developer nanodegree course style guide
-                http://udacity.github.io/frontend-nanodegree-styleguide/javascript.html
-                says to use single quotes for JavaScript strings, but double quotes are
-                required for json.  Which the course is also using for definition of the
-                base objects.
+                http://udacity.github.io/frontend-nanodegree-styleguide/
+                javascript.html says to use single quotes for JavaScript
+                strings, but double quotes are required for json.  Which the
+                course is also using for definition of the base objects.
 
-                The styleguide says to use string concatenation to break long lines, but
-                that is not valid when complying with JSON syntax.
+                The styleguide says to use string concatenation to break long
+                lines, but that is not valid when complying with JSON syntax.
              */
 
+            // Tell jslint to allow long lines in the JSON data structures
+            /*jslint maxlen: 150 */
             /**
              * Create and populate the object containing general biographical
              * information for the résumé using a JSON format object definition
@@ -218,6 +217,7 @@ $(function () {
                 ],
                 "biopic" :              "images/biopic.jpg"
             };// ./dataRoot.bio
+            /*jslint maxlen: 82 */
 
             // Encapsulate the bio display function into the object
             /**
@@ -225,80 +225,107 @@ $(function () {
              * @param  {object} bio Biographical data object
              * @return {undefined}
              */
-            dataRoot.bio.display = function (bio) {
+            dataRoot.bio.display = function () {
                 /*global HTMLheaderRole, HTMLheaderName, HTMLmobile, HTMLemail,
                     HTMLgithub, HTMLtwitter, HTMLblog, HTMLlocation, HTMLbioPic,
                     HTMLWelcomeMsg */
-                var formattedHtml, PLC_HLD, wrapperEle;//[also] used in inner closure scope
+                var formattedHtml, PLC_HLD, wrapperEle;
+                // defined variables [also] used in inner closure scope functions
                 PLC_HLD = base.CONST.DATA_PLACEHOLDER;
-                if (!$.isPlainObject(bio)) {
-                    //Major problem. This is not going to work, no practical runtime recovery
+                if (!$.isPlainObject(this)) {
+                    // Major problem. This is not going to work, no practical
+                    // runtime recovery
                     return false;
                 }
 
                 formattedHtml = HTMLheaderRole.replace(PLC_HLD,
-                    bio.role || 'no role specified'
+                    this.role || 'no role specified'
                     );
                 $('#header').prepend(formattedHtml);
                 formattedHtml = HTMLheaderName.replace(PLC_HLD,
-                    bio.name || 'the unknown comic'
+                    this.name || 'the unknown comic'
                     );
                 $('#header').prepend(formattedHtml);
 
-                //Individual contact details are optional: only insert when they exist
+                /**
+                 * Add a single contact reference to the page
+                 *
+                 * Individual contact details are optional.  Check if the
+                 * specified instance exists before trying to add it.
+                 *
+                 * @param  {string} template    HTML to show the contact
+                 * @param  {string} dataSource  property name holding the details
+                 * @return {undefined}
+                 */
                 function showContact(template, dataSource) {
                     var urlWrapper;
-                    if (bio.contacts[dataSource]) {
+                    if (this.contacts[dataSource]) {
                         // Have data for this contact source
                         formattedHtml = template.replace(PLC_HLD,
-                            bio.contacts[dataSource]
+                            this.contacts[dataSource]
                             );
-                        if (bio.contacts.urls[dataSource]) {
-                            // Have a url to go along with the raw data; convert the
-                            // body/content of the formatted (li) element into a link
+                        if (this.contacts.urls[dataSource]) {
+                            // Have a url to go along with the raw data; convert
+                            // the body/content of the formatted (li) element
+                            // into a link
                             urlWrapper = base.TEMPLATES.URL_WRAPPER.replace(
                                 PLC_HLD,
-                                bio.contacts.urls[dataSource]
+                                this.contacts.urls[dataSource]
                             );
                             formattedHtml = $(formattedHtml);
                             formattedHtml.wrapInner(urlWrapper);
                         }
+                        // Add the info to both the to and footer contact blocks
                         $('#topContacts, #footerContacts').append(formattedHtml);
                     }
                 }// ./showContact(template, dataSource)
 
-                //Show contacts that do not have a preformatted template
+                /**
+                 * Show contacts that do not have a preformatted template
+                 *
+                 * @param  {string} contactType label for the contact
+                 * @param  {string} dataSource  property name holding the details
+                 * @return {undefined}
+                 */
                 function showGenericContact(contactType, dataSource) {
                     /*global HTMLcontactGeneric */
                     var partialTemplate;
-                    partialTemplate = HTMLcontactGeneric.replace('%contact%', contactType);
-                    showContact(partialTemplate, dataSource);
+                    partialTemplate = HTMLcontactGeneric.
+                        replace('%contact%', contactType);
+                    showContact.call(this, partialTemplate, dataSource);
                 }// ./showGenericContact(contactType, dataSource)
 
-                showContact(HTMLmobile, 'mobile');
-                showContact(HTMLemail, 'email');
-                showGenericContact('skype', 'skype');
-                showContact(HTMLgithub, 'github');
-                showContact(HTMLtwitter, 'twitter');
-                showContact(HTMLblog, 'blog');
-                showContact(HTMLlocation, 'location');
+                // Keep the current 'this' parameter value when calling any
+                // inner functions that reference the source object properties
+                showContact.call(this, HTMLmobile, 'mobile');
+                showContact.call(this, HTMLemail, 'email');
+                showGenericContact.call(this, 'skype', 'skype');
+                showContact.call(this, HTMLgithub, 'github');
+                showContact.call(this, HTMLtwitter, 'twitter');
+                showContact.call(this, HTMLblog, 'blog');
+                showContact.call(this, HTMLlocation, 'location');
 
                 formattedHtml = HTMLbioPic.replace(PLC_HLD,
-                    bio.biopic || 'http://placehold.it/100x100'
+                    this.biopic || 'http://placehold.it/100x100'
                     );
                 $('#header').append(formattedHtml);
                 formattedHtml = HTMLWelcomeMsg.replace(PLC_HLD,
-                    bio.welcomeMessage || 'welcome not specified'
+                    this.welcomeMessage || 'welcome not specified'
                     );
                 $('#header').append(formattedHtml);
 
+                /**
+                 * Add the complete list of skills to the page
+                 * @return {undefined}
+                 */
                 function showAllSkills() {
                     /*global HTMLskillsStart, HTMLskills */
                     var skillsBlock, skillEle, moreStart;
 
                     /**
                      * Add a single skill entry to the page
-                     * @param  {string} singleSkill The name/description for a single skill
+                     *
+                     * @param  {string} singleSkill  Description for the skill
                      * @return {undefined}
                      */
                     function addOneSkill(singleSkill) {
@@ -306,31 +333,38 @@ $(function () {
                         wrapperEle.append(formattedHtml);
                     }// ./addOneSkill(singleSkill)
 
-                    skillsBlock = $(HTMLskillsStart);// Keep 'local' until populated
+                    skillsBlock = $(HTMLskillsStart);// 'local' until populated
                     wrapperEle = skillsBlock.last();// The '#skills' element
-                    bio.skills.forEach(addOneSkill);//append all skills listed
+                    this.skills.forEach(addOneSkill);// append all skills listed
 
-                    // Add any extra skills that are to be initially hidden, but can be
-                    // shown by user choice
-                    if ($.isArray(bio.moreSkills) && bio.moreSkills.length > 0) {
-                        // Save the index where the first extended skill will be stored.
+                    // Add any extra skills that are to be initially hidden,
+                    // but can be shown by user choice
+                    if ($.isArray(this.moreSkills) &&
+                            this.moreSkills.length > 0
+                            ) {
+                        // Save the index where the first extended skill will
+                        // be stored.
                         moreStart = wrapperEle.children().length;
-                        bio.moreSkills.forEach(addOneSkill);
+                        this.moreSkills.forEach(addOneSkill);
 
-                        // Append an extra dummy skill to use for the More/Less button
+                        // Append an extra dummy skill to use for the More/Less
+                        // button
                         formattedHtml = HTMLskills.replace(PLC_HLD, '');
                         skillEle = $(formattedHtml);
                         skillEle.addClass(base.CONST.MORE_SKILLS_TAG);
                         skillEle.addClass('skillsButton');
                         wrapperEle.append(skillEle);
 
-                        // Add a tag to the last 'regular' skill, so that the added
-                        // elements can be found (as a block) later.  This is the stop
-                        // marker to use with .prevUntil
-                        $(wrapperEle.children()[moreStart - 1]).attr('data-tag', 'lastShownSkill');
+                        // Add a tag to the last 'regular' skill, so that the
+                        // added elements can be found (as a block) later.
+                        // This is the stop marker to use with .prevUntil
+                        $(wrapperEle.children()[moreStart - 1]).
+                            attr('data-tag', 'lastShownSkill');
 
-                        // Mark all of the extra skills to not be displayed (initially)
-                        wrapperEle.children().not(base.CONST.MORE_SKILLS_SELECTOR).
+                        // Mark all of the extra skills to not be displayed
+                        // (initially)
+                        wrapperEle.children().
+                            not(base.CONST.MORE_SKILLS_SELECTOR).
                             slice(moreStart).addClass(base.CONST.ROW_HIDE_TAG);
                     }
 
@@ -339,12 +373,14 @@ $(function () {
                 }// .showAllSkills()
 
                 // Add the skills summary to the header: only when skills exist
-                if ($.isArray(bio.skills) && bio.skills.length > 0) {
-                    showAllSkills();
+                if ($.isArray(this.skills) && this.skills.length > 0) {
+                    showAllSkills.call(this);
                 }
-            };// ./dataRoot.bio.display(bio)
+            };// ./dataRoot.bio.display()
 
 
+            // Tell jslint to allow long lines in the JSON data structures
+            /*jslint maxlen: 150 */
             /**
              * Create and populate the object containing work history information
              * for the résumé using a JSON format object definition
@@ -456,6 +492,7 @@ $(function () {
                     "defaultPageLimit" : 5
                 }
             };// ./dataRoot.work
+            /*jslint maxlen: 82 */
             // Populate the config.controlSet information outside of the JSON
             // data block, so that declared constant values can be used instead
             // of literal strings.
@@ -465,7 +502,7 @@ $(function () {
                 base.CONST.PAGE_PREVIOUS_TAG,
                 base.CONST.PAGE_NEXT_TAG
             ];
-            //resume controls.mm
+            // more to add shown in resume controls.mm
 
             // Encapsulate the work history display function into the object
             /**
@@ -475,13 +512,14 @@ $(function () {
              * @return {undefined}
              */
             dataRoot.work.display = function (work) {
-                /*global HTMLworkStart, HTMLworkEmployer, HTMLworkTitle, HTMLworkLocation,
-                    HTMLworkDates, HTMLworkDescription */
+                /*global HTMLworkStart, HTMLworkEmployer, HTMLworkTitle,
+                    HTMLworkLocation, HTMLworkDates, HTMLworkDescription */
                 var jobNum, jobEle, fmtEmployer, formattedHtml, PLC_HLD;
                 PLC_HLD = base.CONST.DATA_PLACEHOLDER;
 
                 if (!($.isPlainObject(work) && $.isArray(work.jobs))) {
-                    //Major problem. This is not going to work, no practical runtime recovery
+                    // Major problem. This is not going to work, no practical
+                    // runtime recovery
                     return false;
                 }
 
@@ -496,7 +534,7 @@ $(function () {
                     formattedHtml = HTMLworkTitle.replace(PLC_HLD,
                         work.jobs[jobNum].title || 'no title'
                         );
-                    jobEle = $('.work-entry:last');//Only get wrapper element once
+                    jobEle = $('.work-entry:last');// Only get wrapper once
                     jobEle.append(fmtEmployer + formattedHtml);
 
                     formattedHtml = HTMLworkLocation.replace(PLC_HLD,
@@ -516,15 +554,18 @@ $(function () {
                 }// ./for
 
                 if ($.isPlainObject(work.config)) {
-                    // The JSON data includes some exta display configration information.
-                    // Provide some extra supporting user controls
+                    // The JSON data includes some exta display configration
+                    // information.  Provide some extra supporting user controls.
                     work.config.build = base.controls.buildPageable;
 
-                    base.controls.addBlockControls('#workExperience', work.config);
+                    base.controls.
+                        addBlockControls('#workExperience', work.config);
                 }
             };// ./dataRoot.work.display(work)
 
 
+            // Tell jslint to allow long lines in the JSON data structures
+            /*jslint maxlen: 150 */
             /**
              * Create and populate the object containing featured project
              * information for the résumé using a JSON format object definition
@@ -593,6 +634,7 @@ $(function () {
                     }
                 ]
             };// ./dataRoot.projects
+            /*jslint maxlen: 82 */
 
             // Encapsulate the project display function into the object
             /**
@@ -603,33 +645,38 @@ $(function () {
              */
             dataRoot.projects.display = function (projects) {
                 var PLC_HLD;
-                PLC_HLD = base.CONST.DATA_PLACEHOLDER;//for nested functions
+                PLC_HLD = base.CONST.DATA_PLACEHOLDER;// for nested functions
 
-                if (!($.isPlainObject(projects) && $.isArray(projects.projects))) {
-                    //Major problem. This is not going to work, no practical runtime recovery
+                if (!($.isPlainObject(projects) &&
+                        $.isArray(projects.projects))
+                        ) {
+                    // Major problem. This is not going to work, no practical
+                    // runtime recovery
                     return false;
                 }
 
                 /**
                  * Add all details for a single project to the résumé web page
-                 * @param {object} projectObject Object with properties holding project
-                 *                               details
+                 * @param {object} projectObject Object with properties holding
+                 *                               project details
                  * @return {undefined}
                  */
                 function addOneProject(projectObject) {
                     /*global HTMLprojectStart, HTMLprojectTitle, HTMLprojectDates,
                         HTMLprojectDescription, HTMLprojectImage */
-                    var prjEle, imgWrap, tmpEle, img, propObj, imgKey, attrVal, formattedHtml;
-                    //$('#projects').append(HTMLprojectStart);
-                    //prjEle = $('.project-entry:last');//The just added project wrapper element
-                    prjEle = $(HTMLprojectStart);//Keep off the page until loaded
+                    var prjEle, imgWrap, tmpEle, img, propObj, imgKey, attrVal,
+                        formattedHtml;
+                    // $('#projects').append(HTMLprojectStart);
+                    // Get a reference to the just added project wrapper element
+                    // prjEle = $('.project-entry:last');
+                    prjEle = $(HTMLprojectStart);// Keep local until loaded
 
                     formattedHtml = HTMLprojectTitle.replace(PLC_HLD,
                         projectObject.title || 'no project title'
                         );
                     tmpEle = $(formattedHtml);
                     if (projectObject.url) {
-                        //There is a url to go along with the project; fill it in
+                        // Fill in the url that goes along with the project
                         tmpEle.attr('href', projectObject.url);
                     }
                     prjEle.append(tmpEle);
@@ -645,33 +692,37 @@ $(function () {
                     prjEle.append(formattedHtml);
 
                     // Makesure image properties exist, even if they are empty
-                    projectObject.imageProperties = projectObject.imageProperties || {};
-                    // Create a wrapper for the images, so that they can easily be formatted
-                    // to float and wrap
+                    projectObject.imageProperties = projectObject.
+                        imageProperties || {};
+                    // Create a wrapper for the images, so that they can easily
+                    // be formatted to float and wrap
                     imgWrap = $(base.TEMPLATES.IMAGES_START);
                     for (img = 0; img < projectObject.images.length; img += 1) {
-                        // Prefer to use array of objects for the initial images with
-                        // thumbnails and associated links to the larger version, but
-                        // did not want to change the structure defined for the
-                        // projects.  So just extended with (optional) parallel
-                        // information instead.
+                        // Prefer to use array of objects for the initial images
+                        // with thumbnails and associated links to the larger
+                        // version, but did not want to change the structure
+                        // defined for the projects.  So just extended with
+                        // (optional) parallel information instead.
                         imgKey = projectObject.images[img];
                         propObj = projectObject.imageProperties[imgKey] || {};
                         attrVal = propObj.src || imgKey;
-                        formattedHtml = HTMLprojectImage.replace(PLC_HLD, attrVal);
+                        formattedHtml = HTMLprojectImage.
+                            replace(PLC_HLD, attrVal);
                         tmpEle = $(formattedHtml);
 
-                        attrVal = propObj.alt || base.TEMPLATES.IMAGE_DESCRIPTION.replace(
-                            PLC_HLD,
-                            projectObject.title
-                        ).replace(PLC_HLD, img + 1);
+                        attrVal = propObj.alt || base.
+                            TEMPLATES.IMAGE_DESCRIPTION.
+                            replace(PLC_HLD, projectObject.title).
+                            replace(PLC_HLD, img + 1);
                         tmpEle.attr('alt', attrVal);
 
                         if (propObj.url) {
-                            tmpEle = $(base.TEMPLATES.BARE_ANCHOR).append(tmpEle);
+                            tmpEle = $(base.TEMPLATES.BARE_ANCHOR).
+                                append(tmpEle);
                             tmpEle.attr('href', propObj.url);
                         }
-                        imgWrap.append($(base.TEMPLATES.IMAGE_HOLDER).append(tmpEle));
+                        imgWrap.append($(base.TEMPLATES.IMAGE_HOLDER).
+                            append(tmpEle));
                     }
                     prjEle.append(imgWrap);
                     $('#projects').append(prjEle);
@@ -681,6 +732,8 @@ $(function () {
             };// ./dataRoot.projects.display(projects)
 
 
+            // Tell jslint to allow long lines in the JSON data structures
+            /*jslint maxlen: 150 */
             /**
              * Create and populate the object containing education information
              * for the résumé using a JSON format object definition
@@ -795,6 +848,7 @@ $(function () {
                     }
                 ]
             };// ./dataRoot.education
+            /*jslint maxlen: 82 */
 
             // Encapsulate the education display function into the object
             /**
@@ -809,21 +863,24 @@ $(function () {
                     HTMLonlineDates */
                 var formattedHtml, PLC_HLD, eduRoot, eduSource, showURL;
                 // vars (also) used for nested functions (closure scope)
-                PLC_HLD = base.CONST.DATA_PLACEHOLDER;//for nested functions
+                PLC_HLD = base.CONST.DATA_PLACEHOLDER;// for nested functions
 
-                if (!($.isPlainObject(education) && $.isArray(education.schools))) {
-                    //Major problem. This is not going to work, no practical runtime recovery
+                if (!($.isPlainObject(education) &&
+                        $.isArray(education.schools))
+                        ) {
+                    // Major problem. This is not going to work, no practical
+                    // runtime recovery
                     return false;
                 }
 
                 /**
                  * Add all details for a single education instance to the page
                  *
-                 * This handles schools, online courses, and evening courses.  They all
-                 * have similar data and formatting.  There are just enough differences
-                 * to make refactoring to a single function a bit tricky.  Especially
-                 * while trying to keep the processing fairly generic.  Needed a bit of
-                 * special case hard-coding.
+                 * This handles schools, online courses, and evening courses.
+                 * They all have similar data and formatting.  There are just
+                 * enough differences to make refactoring to a single function
+                 * a bit tricky.  Especially while trying to keep the processing
+                 * fairly generic.  Needed a bit of special case hard-coding.
                  *
                  * @param {object} educationObject Object with properties holding
                  *                                 education instance details
@@ -834,24 +891,29 @@ $(function () {
                         HTMLonlineURL */
                     var eduEle, firstPart, tmpEle, mjr;
 
-                    // I like populating a local element before adding, instead of using
-                    // :last or .last() to get it back to add children.  This works even
-                    // if there is no convenient tag to identify the added element.
-                    //eduRoot.append(HTMLschoolStart);
-                    //eduEle = $('.education-entry:last');//The just added wrapper element
-                    //eduEle = eduRoot.last();//The just added wrapper element
+                    // I like populating a local element before adding, instead
+                    // of using :last or .last() to get it back to add children.
+                    // This works even if there is no convenient tag to identify
+                    // the added element.
+                    // eduRoot.append(HTMLschoolStart);
+                    // Get a reference to the just added wrapper element
+                    // eduEle = $('.education-entry:last');
+                    // eduEle = eduRoot.last();//The just added wrapper element
                     eduEle = $(HTMLschoolStart);// New empty wrapper
 
                     firstPart = eduSource.firstTemplate.replace(PLC_HLD,
-                        educationObject[eduSource.firstData] || 'no title specified'
+                        educationObject[eduSource.firstData] ||
+                            'no title specified'
                         );
                     formattedHtml = eduSource.secondTemplate.replace(PLC_HLD,
-                        educationObject[eduSource.secondData] || 'no degree or school'
+                        educationObject[eduSource.secondData] ||
+                        'no degree or school'
                         );
                     tmpEle = $(firstPart + formattedHtml);
 
                     if (educationObject.url) {
-                        // Fill in the link to the school (and degree) or specific course
+                        // Fill in the link to the school (and degree) or
+                        // specific course
                         tmpEle.attr('href', educationObject.url);
                     }
                     eduEle.append(tmpEle);
@@ -869,19 +931,20 @@ $(function () {
                     eduEle.append(formattedHtml);
 
                     if ($.isArray(educationObject.majors)) {
-                        for (mjr = 0; mjr < educationObject.majors.length; mjr += 1) {
-                            formattedHtml = HTMLschoolMajor.replace(PLC_HLD,
-                                educationObject.majors[mjr]
-                                );
+                        for (mjr = 0; mjr < educationObject.majors.length;
+                                mjr += 1) {
+                            formattedHtml = HTMLschoolMajor.
+                                replace(PLC_HLD, educationObject.majors[mjr]);
                             eduEle.append(formattedHtml);
                         }// ./for
                     }// ./($.isArray(educationObject.majors))
 
-                    // currently the only thing that distinguishes between the data for
-                    // an online versus evening course, is that evening MIGHT have a
-                    // location entry for the school.  That is not enough for safe
-                    // separation, but only online has the explicit URL entry.  Need to
-                    // use closure scope to get the caller to tell us when to show it.
+                    // currently the only thing that distinguishes between the
+                    // data for an online versus evening course, is that evening
+                    // MIGHT have a location entry for the school.  That is not
+                    // enough for safe separation, but only online has the
+                    // explicit URL entry.  Need to use closure scope to get the
+                    // caller to tell us when to show it.
                     if (showURL) {
                         formattedHtml = HTMLonlineURL.replace(PLC_HLD,
                             educationObject.url || 'no url specified'
@@ -906,8 +969,9 @@ $(function () {
                     'secondTemplate' : HTMLschoolDegree,
                     'secondData' : 'degree',
                     'dates' : HTMLschoolDates
-                    // currently HTMLschoolDates === HTMLonlineDates, but since they are
-                    // specified separately, keep them separate here too by using lookup
+                    // currently HTMLschoolDates === HTMLonlineDates, but since
+                    // they are specified separately, keep them separate here
+                    // too by using lookup
                 };
                 education.schools.forEach(addEducation);
 
@@ -919,8 +983,8 @@ $(function () {
                     'dates' : HTMLonlineDates
                 };
                 if ($.isArray(education.onlineCourses)) {
-                    // At least one online course exists.  Insert the header, followed
-                    // by details for each course
+                    // At least one online course exists.  Insert the header,
+                    // followed by details for each course
                     showURL = true;
                     eduRoot.append(HTMLonlineClasses);
                     education.onlineCourses.forEach(addEducation);
@@ -932,14 +996,15 @@ $(function () {
                     education.eveningCourses.forEach(addEducation);
                 }
 
-                // TODO: may need to sneak another wrapper around the separate groups
-                // of education-entry blocks: to be able to add separate paging
-                // controls to each group.  If I added the existing controls to
-                // #education, all sets would be included in the same paging logic, so
-                // the first page would be regular schools, and maybe the first of the
-                // online courses.  The last page would be all evening courses.
-                // Potentially interesting effect, since the block headers would always
-                // remain visible.  Rolling accordion style
+                // TODO: may need to sneak another wrapper around the separate
+                // groups of education-entry blocks: to be able to add separate
+                // paging controls to each group.  If I added the existing
+                // controls to #education, all sets would be included in the
+                // same paging logic, so the first page would be regular schools,
+                // and maybe the first of the online courses.  The last page
+                // would be all evening courses.
+                // Potentially interesting effect, since the block headers would
+                // always remain visible.  Rolling accordion style
             };// ./dataRoot.education.display(education)
         };// ./base.initialize(dataRoot)
 
@@ -995,7 +1060,7 @@ $(function () {
                         if (obj.hasOwnProperty(key)) { return true; }
                     }
                 }
-                return false;//Not a plain object, or is empty
+                return false;// Not a plain object, or is empty
             };// ./isNonEmptyObject(obj)
 
             /**
@@ -1033,17 +1098,14 @@ $(function () {
              * @return {integer}         function identifier for the associated
              *                           control
              */
-            getControlFunction = function (ctlClass) {//ctlEle if class not enough
-                // LOGIC QUERY:
-                //check if each known function tag exists in the class list?
-                //check if each class in the list is in the known function tags?
+            getControlFunction = function (ctlClass) {
                 var classes, cls, ctlFunction;
                 if (typeof ctlClass !== 'string') {
                     throw new TypeError(
                         'getControlFunction was not passed a string argument'
                     );
                 }
-                classes = ctlClass.split(' ');//array of individual class names
+                classes = ctlClass.split(' ');// array of individual class names
                 if (classes.length === 0) {
                     throw new RangeError(
                         'no function tags exist for control element'
@@ -1055,7 +1117,7 @@ $(function () {
                     ctlFunction = base.CONST.CONTROL_FUNCTIONS.
                         indexOf(classes[cls]);
                     if (ctlFunction >= 0) {
-                        return ctlFunction;//Found a tag matching the class name
+                        return ctlFunction;// Found a tag matching the class name
                     }
                 }// ./for
                 throw new RangeError(
@@ -1171,8 +1233,8 @@ $(function () {
                 }
 
                 if (typeof pageState.base.rowSelector !== 'string') {
-                    //pageState.state = base.CONST.FINAL_STATE;
-                    //pageState.state = 'notpaging';
+                    // pageState.state = base.CONST.FINAL_STATE;
+                    // pageState.state = 'notpaging';
                     return pageState;
                 }
                 pageState.allRows = ctlEle.parent().
@@ -1227,11 +1289,11 @@ $(function () {
             showUpdatedPage = function (currentState, newStart) {
                 var showStart, showEnd;
 
-                //EDGE CASE: overflow = pageLimit + 1; rowCount = overflow + 2;
+                // EDGE CASE: overflow = pageLimit + 1; rowCount = overflow + 2;
                 // newStart = 1; would be orphan at both ends, but using overflow
                 // goes over the overflow limit.
 
-                //Get values for the row slice ranges: end is one higher than
+                // Get values for the row slice ranges: end is one higher than
                 // actually used.
                 showStart = newStart;
                 if (showStart < 0) {
@@ -1273,9 +1335,9 @@ $(function () {
                     showEnd = currentState.rowCount;
                 }
                 // LOGIC QUERY:
-                //If want to show a full page at the end of the document, reduce
-                //showStart to showEnd minus pageLimit|overflow when showEnd ===
-                //rowCount
+                // If want to show a full page at the end of the document, reduce
+                // showStart to showEnd minus pageLimit|overflow when showEnd ===
+                // rowCount
 
                 /////////////////////////////
                 // Update the visible rows //
@@ -1301,12 +1363,12 @@ $(function () {
 
                 // Show any currently hidden rows that are wanted on the new page.
                 currentState.allRows.
-                    slice(showStart, showEnd).//new visible
+                    slice(showStart, showEnd).// new visible
                     not(currentState.allRows.slice(
                         currentState.pageTop,
                         currentState.pageEnd + 1
                     )).// already visible
-                    removeClass(base.CONST.ROW_HIDE_TAG);//show rows
+                    removeClass(base.CONST.ROW_HIDE_TAG);// show rows
             };// ./showUpdatedPage(currentState, newStart)
 
             /**
@@ -1477,11 +1539,11 @@ $(function () {
                 // Attach a clone of the options object to the wrapper element, to
                 // keep any (block instance specific) updates out of the original
                 controlEle.data('config', $.extend(true, {}, options));
-                options.build(controlEle, parentEle);//add case specific cntrls
+                options.build(controlEle, parentEle);// add case specific cntrls
 
-                //Add the main open menu control last, to position the control set
-                // at the right edge, and 'open' it to the left.
-                //Do this here, instead of inside the referenced options.build()
+                // Add the main open menu control last, to position the control
+                // set at the right edge, and 'open' it to the left.
+                // Do this here, instead of inside the referenced options.build()
                 // function, so that multple generic 'builds' can be done, and
                 // still always get the top control last and only once.
                 controlEle.append(base.TEMPLATES.CTL_MENU_ITEM.replace(
@@ -1535,13 +1597,13 @@ $(function () {
                     });
                 }
 
-                //If fixed positioning:
+                // If fixed positioning:
                 //  1) use css rules to position the [sub] controls
                 //  2) use js to position at time of creation
                 //      a) hard-coded logic
                 //      b) configuration logic
                 //      c) dynamic from page context
-                //If responsive
+                // If responsive
                 //  1) use css rules (and media queries)
                 //  2) use js to [re]position on resize
                 //      sub options as for fixed positioning
@@ -1671,8 +1733,6 @@ $(function () {
                     ctlEle.removeClass(base.CONST.LESS_SKILLS_TAG);
                     ctlEle.addClass(base.CONST.MORE_SKILLS_TAG);
                 }
-                //skillEle.addClass('skillsButton');
-
             };// ./moreLessClick(e)
         };// ./base.app.build(ctlRoot)
 
@@ -1684,7 +1744,7 @@ $(function () {
         base.app.initialize = function (root) {
             var ctl = root.controls;
 
-            //Setup event (and delegate) handlers for the interactive controls
+            // Setup event (and delegate) handlers for the interactive controls
             $('#main').on('mouseenter', base.CONST.CONTROL_SELECTOR, function () {
                 $(this).addClass(base.CONST.WAKE_CONTROL);
             });
@@ -1701,24 +1761,24 @@ $(function () {
             });
             ctl.showInternationalize();
 
-            //show all of the hidden application sections as one batch
+            // show all of the hidden application sections as one batch
             $('#main > div').removeClass(base.CONST.SLEEP_CONTROL);
         };// ./app.initialize(root)
 
-        //Load the résumé data into application storage
+        // Load the résumé data into application storage
         base.initialize(base);
 
         // Create common resources needed by display functions
         base.app.build(base);
 
         // Add the stored data to the active page
-        base.bio.display(base.bio);
+        base.bio.display();
         base.work.display(base.work);
         base.projects.display(base.projects);
         base.education.display(base.education);
 
         base.showMap();
-        base.app.initialize(base);//Setup the dynamic features
+        base.app.initialize(base);// Setup the dynamic features
     }(baseForApp));// ./function(glbRoot)
 });// ./function ()
 /*
