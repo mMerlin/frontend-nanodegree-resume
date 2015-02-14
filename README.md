@@ -1,3 +1,40 @@
+# UDACITY > Front End Web Developer Nanodegree > Project 2
+
+This is a resume page built almost entirely from javascript.  It starts from
+a simple html file with a bit of structure, but the content is all filled in
+from data held in the javascript code, in JSON style objects.
+
+A couple extension to the initial project were implemented
+### Collapsible Skill Summary.
+Since I have been working in IT for quite some time, the list of technoloigies I
+have worked with is extensive.  Filling in even a subset looked messy.  I added
+some code to only display the first part of list, and added a button to expand
+to the rest of the (still shortened) list.
+
+### Work History Paging
+Again to shorten the avalanche of too much information, only the more recent
+work history is shown to start with.  Popup memu controls were added to either
+fully expand that, or to page through it.  The control menu is opened by
+clicking on the icon based on the 'open menu' icon used by some browsers.
+
+There are several additional 'features' of the page that I would like to enhance
+and extend, but that is going to have to wait while I work on other projects in
+the NanoDegree.
+
+<a href="https://github.com/postcss/autoprefixer">autoprefixer</a> is being
+used (manually) from the command line to make the standard css3 styling rules
+compatible with a wide range of browsers.  For reference, both the standard css3
+and the generated output are being kept in the repository.  In a regular
+environment, the standard css would be in the repository, and the generated
+output would go to the web site, but not the repository.  Since this is being
+published through github pages, I want both.
+
+```bash
+autoprefixer -o ./css/style.css --no-cascade --no-map css/style.css.src
+```
+
+Here are the original notes about doing the project
+
 ## How do I complete this project?
 
 1. Go to the [Javascript Basics course](https://www.udacity.com/course/ud804) and select "View Course Materials."
@@ -16,7 +53,7 @@ And your repository will include the following files:
 * **js/resumeBuilder.js**: This file is empty. You should write your code here.
 * **js/jQuery.js**: The jQuery library.
 * **css/style.css**: Contains all of the CSS needed to style the page.
-* **README.md**: 
+* **README.md**:
 The GitHub readme file.
 * and some images in the images directory.
 
@@ -32,22 +69,22 @@ The resume has four distinct sections: work, education, projects and a header wi
 1. Build four JSONs, each one representing a different resume section. The objects that you create need to follow the names within the schema below exactly. Make sure your JSONs are formatted correctly using <a href="http://jsonlint.com/" target="_blank">JSONlint.com</a>.
 
 * `bio` contains:
-        
+
             name : string
             role : string
             contacts : array of objects with
                   mobile: string
-                  email: string 
+                  email: string
                   github: string
-                  twitter: string 
+                  twitter: string
                   location: string
-            welcomeMessage: string 
+            welcomeMessage: string
             skills: array of strings
             biopic: url
             display: function taking no parameters
 
 * `education` contains:
-      
+
             schools: array of objects with
                  name: string
                  location: string
@@ -63,19 +100,19 @@ The resume has four distinct sections: work, education, projects and a header wi
             display: function taking no parameters
 
 * `work` contains
-          
+
             jobs: array of objects with
-                 employer: string 
-                 title: string 
-                 location: string 
+                 employer: string
+                 title: string
+                 location: string
                  dates: string (works with a hyphen between them)
-                 description: string 
+                 description: string
             display: function taking no parameters
 
 * `projects` contains:
 
             projects: array of objects with
-                  title: string 
+                  title: string
                   dates: string (works with a hyphen between them)
                   description: string
                   images: array with string urls
